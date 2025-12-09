@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ActivitiesService } from './services/activities.service';
+import { CreateActivityDto } from './dto/CreateActivityDto';
 
 @Controller('activities')
 export class ActivitiesController {
@@ -12,8 +13,7 @@ export class ActivitiesController {
   }
 
   @Post()
-  createActivity(@Body() body: any) {
-    console.log(body);
-    return this.activitiesService.createActivity();
+  createActivity(@Body() body: CreateActivityDto) {
+    return this.activitiesService.createActivity(body);
   }
 }
