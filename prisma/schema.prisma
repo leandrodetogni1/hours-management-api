@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model activities {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorid     String?     @db.Uuid
+  unitid       String?     @db.Uuid
+  statusid     String?     @db.Uuid
+  categoryid   String?     @db.Uuid
+  classid      String?     @db.Uuid
+  organization String?     @db.VarChar(255)
+  number       Int?
+  hours        Decimal?    @db.Decimal(10, 2)
+  startdate    DateTime?   @db.Date
+  enddate      DateTime?   @db.Date
+  createdat    DateTime?   @default(now()) @db.Timestamp(6)
+  updatedat    DateTime?   @default(now()) @db.Timestamp(6)
+  users        users?      @relation(fields: [authorid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  categories   categories? @relation(fields: [categoryid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  classes      classes?    @relation(fields: [classid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  statuses     statuses?   @relation(fields: [statusid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  units        units?      @relation(fields: [unitid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  files        files[]
+}
+
+model categories {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String       @db.VarChar(255)
+  activities activities[]
+}
+
+model classes {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type       String       @db.VarChar(255)
+  activities activities[]
+}
+
+model files {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  activityid String?     @db.Uuid
+  file       Bytes?
+  updatedat  DateTime?   @default(now()) @db.Timestamp(6)
+  activities activities? @relation(fields: [activityid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model roles {
+  id    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name  String  @db.VarChar(255)
+  users users[]
+}
+
+model statuses {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String       @db.VarChar(255)
+  activities activities[]
+}
+
+model units {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type       String       @db.VarChar(255)
+  activities activities[]
+}
+
+model users {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstname  String       @db.VarChar(255)
+  lastname   String       @db.VarChar(255)
+  roleid     String?      @db.Uuid
+  createdat  DateTime?    @default(now()) @db.Timestamp(6)
+  updatedat  DateTime?    @default(now()) @db.Timestamp(6)
+  email      String       @unique @db.VarChar(255)
+  activities activities[]
+  roles      roles?       @relation(fields: [roleid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}

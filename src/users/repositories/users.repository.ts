@@ -1,31 +1,60 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from '../dto/CreateUserDto';
-
-export const users = [
-  {
-    id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'jhon@doe.com',
-  },
-];
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UsersRepository {
-  findById(id: string) {
-    return users.find((user) => user.id === id);
+  constructor(private prisma: PrismaService) {}
+
+  getAll() {
+    return this.prisma.users.findMany();
   }
 
-  createUser(user: CreateUserDto) {
-    const newUser = {
-      id: (users.length + 1).toString(),
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-    };
+  findById(id: string) {
+    return this.prisma.users.findUnique({
+      where: { id },
+    });
+  }
 
-    users.push(newUser);
+  async createUser(user: CreateUserDto, userRole: string = 'member') {
+    const role = await this.prisma.roles.findFirst({
+      where: {
+        name: userRole,
+      },
+      select: { id: true },
+    });
 
-    return newUser;
+    if (!role) {
+      throw new Error('Role not found');
+    }
+
+    try {
+      const createdUser = await this.prisma.users.create({
+        data: {
+          email: user.email,
+          firstname: user.firstName,
+          lastname: user.lastName,
+          roleid: role.id,
+        },
+      });
+
+      return {
+        message: 'User created successfully',
+        user: {
+          id: createdUser.id,
+          email: createdUser.email,
+          firstName: createdUser.firstname,
+          lastName: createdUser.lastname,
+        },
+      };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException('Email already exists');
+        }
+      }
+      throw new Error(`Failed to create user: ${error}`);
+    }
   }
 }

@@ -1,18 +1,22 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 
 import { UsersService } from './services/users.service';
 import { CreateUserDto } from './dto/CreateUserDto';
-import { User } from './entities/User';
 
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
   @Get()
-  findAll(): { message: string; nome: string } {
-    return {
-      message: 'This action returns all users',
-      nome: 'teste',
-    };
+  findAll() {
+    return this.usersService.getAllUsers();
   }
 
   @Get(':id')
@@ -21,7 +25,8 @@ export class UsersController {
   }
 
   @Post()
-  createUser(@Body() body: CreateUserDto): User {
+  @HttpCode(HttpStatus.CREATED)
+  createUser(@Body() body: CreateUserDto) {
     return this.usersService.createUser(body);
   }
 }
