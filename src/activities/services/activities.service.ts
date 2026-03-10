@@ -6,7 +6,11 @@ import { CreateActivityDto } from '../dto/CreateActivityDto';
 export class ActivitiesService {
   constructor(private activityRepository: ActivitiesRepository) {}
 
-  createActivity(activity: CreateActivityDto) {
-    return this.activityRepository.createActivity(activity);
+  getAllActivities() {
+    return this.activityRepository.getAll();
+  }
+
+  createActivity(activity: CreateActivityDto, files: Express.Multer.File[]) {
+    return this.activityRepository.createActivity(activity, files);
   }
 }

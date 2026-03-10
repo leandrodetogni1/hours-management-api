@@ -1,20 +1,45 @@
 import { Expose, Type } from 'class-transformer';
-import { IsDate, IsEnum, IsNotEmpty, IsNumber } from 'class-validator';
-import { ActivityClass } from 'src/enums/ActivityClass';
+import {
+  IsDate,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateActivityDto {
   @Expose()
   @IsNotEmpty()
-  @IsEnum(ActivityClass)
-  class: ActivityClass;
+  @IsUUID()
+  authorId: string;
 
   @Expose()
   @IsNotEmpty()
+  @IsUUID()
+  activityTypeId: string;
+
+  @Expose()
+  @IsNotEmpty()
+  @IsString()
   event: string;
 
   @Expose()
+  @IsOptional()
+  @IsString()
+  organization?: string;
+
+  @Expose()
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  number?: number;
+
+  @Expose()
   @IsNotEmpty()
-  organization: string;
+  @IsNumber()
+  @Type(() => Number)
+  hours: number;
 
   @Expose()
   @IsNotEmpty()
@@ -27,18 +52,4 @@ export class CreateActivityDto {
   @IsDate()
   @Type(() => Date)
   endDate: Date;
-
-  @Expose()
-  @IsNotEmpty()
-  @IsNumber()
-  @Type(() => Number)
-  hours: number;
-
-  @Expose()
-  @IsNotEmpty()
-  type: string;
-
-  @Expose()
-  @IsNotEmpty()
-  files: File[];
 }
