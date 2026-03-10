@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { ActivitiesModule } from './activities/activites.module';
+import { ActivityTypesModule } from './activity-types/activity-types.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -14,6 +15,7 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
     UsersModule,
     ActivitiesModule,
+    ActivityTypesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

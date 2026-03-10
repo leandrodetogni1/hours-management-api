@@ -6,13 +6,44 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Category {
+  ENSINO
+  PESQUISA
+  EXTENSAO
+}
+
+enum Unity {
+  SEMESTRE
+  HORAS
+  UNIDADE
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ActivityClass {
+  COMPLEMENTAR
+  LIVRE
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
 model activities {
   id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   authorId     String?     @map("authorid") @db.Uuid
-  unitId       String?     @map("unitid") @db.Uuid
-  statusId     String?     @map("statusid") @db.Uuid
-  categoryId   String?     @map("categoryid") @db.Uuid
-  classId      String?     @map("classid") @db.Uuid
+  unity        Unity?
+  status       Status?     @default(PENDING)
+  category     Category?
+  class          ActivityClass?
+  activityTypeId String?         @map("activitytypeid") @db.Uuid
+  event          String?         @db.VarChar(255)
   organization String?     @db.VarChar(255)
   number       Int?
   hours        Decimal?    @db.Decimal(10, 2)
@@ -20,24 +51,20 @@ model activities {
   endDate      DateTime?   @map("enddate") @db.Date
   createdAt    DateTime?   @map("createdat") @default(now()) @db.Timestamp(6)
   updatedAt    DateTime?   @map("updatedat") @default(now()) @db.Timestamp(6)
-  users        users?      @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  categories   categories? @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  classes      classes?    @relation(fields: [classId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  statuses     statuses?   @relation(fields: [statusId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  units        units?      @relation(fields: [unitId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users          users?          @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  activity_types activity_types? @relation(fields: [activityTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   files        files[]
 }
 
-model categories {
-  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name       String       @db.VarChar(255)
-  activities activities[]
-}
-
-model classes {
-  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type       String       @db.VarChar(255)
-  activities activities[]
+model activity_types {
+  id                              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cod                             String       @unique @db.VarChar(10)
+  label                           String       @db.VarChar(255)
+  category                        Category?
+  unity                           Unity?
+  maxHoursInComplementarActivities Int?        @map("max_hours_complementar")
+  maxHoursPerCertificateOrSemester Int?        @map("max_hours_per_certificate")
+  activities                      activities[]
 }
 
 model files {
@@ -48,32 +75,13 @@ model files {
   activities activities? @relation(fields: [activityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model roles {
-  id    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name  String  @db.VarChar(255)
-  users users[]
-}
-
-model statuses {
-  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name       String       @db.VarChar(255)
-  activities activities[]
-}
-
-model units {
-  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type       String       @db.VarChar(255)
-  activities activities[]
-}
-
 model users {
   id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firstName  String       @map("firstname") @db.VarChar(255)
   lastName   String       @map("lastname") @db.VarChar(255)
-  roleId     String?      @map("roleid") @db.Uuid
+  role       Role?        @default(MEMBER)
   createdAt  DateTime?    @map("createdat") @default(now()) @db.Timestamp(6)
   updatedAt  DateTime?    @map("updatedat") @default(now()) @db.Timestamp(6)
   email      String       @unique @db.VarChar(255)
   activities activities[]
-  roles      roles?       @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

@@ -17,29 +17,18 @@ export class UsersRepository {
     });
   }
 
-  async createUser(user: CreateUserDto, userRole: string = 'member') {
-    const role = await this.prisma.roles.findFirst({
-      where: {
-        name: userRole,
-      },
-      select: { id: true },
-    });
-
-    if (!role) {
-      throw new Error('Role not found');
-    }
-
+  async createUser(user: CreateUserDto) {
     try {
       const createdUser = await this.prisma.users.create({
         data: {
           ...user,
-          roleId: role.id,
         },
         select: {
           id: true,
           email: true,
           firstName: true,
           lastName: true,
+          role: true,
         },
       });
 
