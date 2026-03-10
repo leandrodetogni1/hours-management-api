@@ -8,23 +8,23 @@ datasource db {
 
 model activities {
   id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  authorid     String?     @db.Uuid
-  unitid       String?     @db.Uuid
-  statusid     String?     @db.Uuid
-  categoryid   String?     @db.Uuid
-  classid      String?     @db.Uuid
+  authorId     String?     @map("authorid") @db.Uuid
+  unitId       String?     @map("unitid") @db.Uuid
+  statusId     String?     @map("statusid") @db.Uuid
+  categoryId   String?     @map("categoryid") @db.Uuid
+  classId      String?     @map("classid") @db.Uuid
   organization String?     @db.VarChar(255)
   number       Int?
   hours        Decimal?    @db.Decimal(10, 2)
-  startdate    DateTime?   @db.Date
-  enddate      DateTime?   @db.Date
-  createdat    DateTime?   @default(now()) @db.Timestamp(6)
-  updatedat    DateTime?   @default(now()) @db.Timestamp(6)
-  users        users?      @relation(fields: [authorid], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  categories   categories? @relation(fields: [categoryid], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  classes      classes?    @relation(fields: [classid], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  statuses     statuses?   @relation(fields: [statusid], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  units        units?      @relation(fields: [unitid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  startDate    DateTime?   @map("startdate") @db.Date
+  endDate      DateTime?   @map("enddate") @db.Date
+  createdAt    DateTime?   @map("createdat") @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime?   @map("updatedat") @default(now()) @db.Timestamp(6)
+  users        users?      @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  categories   categories? @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  classes      classes?    @relation(fields: [classId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  statuses     statuses?   @relation(fields: [statusId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  units        units?      @relation(fields: [unitId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   files        files[]
 }
 
@@ -42,10 +42,10 @@ model classes {
 
 model files {
   id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  activityid String?     @db.Uuid
+  activityId String?     @map("activityid") @db.Uuid
   file       Bytes?
-  updatedat  DateTime?   @default(now()) @db.Timestamp(6)
-  activities activities? @relation(fields: [activityid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  updatedAt  DateTime?   @map("updatedat") @default(now()) @db.Timestamp(6)
+  activities activities? @relation(fields: [activityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model roles {
@@ -68,12 +68,12 @@ model units {
 
 model users {
   id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstname  String       @db.VarChar(255)
-  lastname   String       @db.VarChar(255)
-  roleid     String?      @db.Uuid
-  createdat  DateTime?    @default(now()) @db.Timestamp(6)
-  updatedat  DateTime?    @default(now()) @db.Timestamp(6)
+  firstName  String       @map("firstname") @db.VarChar(255)
+  lastName   String       @map("lastname") @db.VarChar(255)
+  roleId     String?      @map("roleid") @db.Uuid
+  createdAt  DateTime?    @map("createdat") @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime?    @map("updatedat") @default(now()) @db.Timestamp(6)
   email      String       @unique @db.VarChar(255)
   activities activities[]
-  roles      roles?       @relation(fields: [roleid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles      roles?       @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

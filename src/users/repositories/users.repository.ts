@@ -32,21 +32,20 @@ export class UsersRepository {
     try {
       const createdUser = await this.prisma.users.create({
         data: {
-          email: user.email,
-          firstname: user.firstName,
-          lastname: user.lastName,
-          roleid: role.id,
+          ...user,
+          roleId: role.id,
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
         },
       });
 
       return {
         message: 'User created successfully',
-        user: {
-          id: createdUser.id,
-          email: createdUser.email,
-          firstName: createdUser.firstname,
-          lastName: createdUser.lastname,
-        },
+        user: createdUser,
       };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {

@@ -14,6 +14,7 @@ import { CreateUserDto } from './dto/CreateUserDto';
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
+
   @Get()
   findAll() {
     return this.usersService.getAllUsers();
