@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Status } from '@prisma/client';
 import { ActivitiesRepository } from '../repositories/activities.repository';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
 
@@ -12,5 +13,13 @@ export class ActivitiesService {
 
   createActivity(activity: CreateActivityDto) {
     return this.activityRepository.createActivity(activity);
+  }
+
+  approveActivity(id: string) {
+    return this.activityRepository.updateActivityStatus(id, Status.APPROVED);
+  }
+
+  rejectActivity(id: string) {
+    return this.activityRepository.updateActivityStatus(id, Status.REJECTED);
   }
 }

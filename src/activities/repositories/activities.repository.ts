@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, Status } from '@prisma/client';
 
 @Injectable()
 export class ActivitiesRepository {
@@ -84,6 +84,43 @@ export class ActivitiesRepository {
     return {
       message: 'Activity created successfully',
       activity,
+    };
+  }
+
+  async updateActivityStatus(id: string, status: Status) {
+    const activity = await this.prisma.activities.findUnique({
+      where: { id },
+    });
+
+    if (!activity) {
+      throw new NotFoundException(`Activity with id ${id} not found`);
+    }
+
+    const updated = await this.prisma.activities.update({
+      where: { id },
+      data: { status },
+      include: {
+        users: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        activity_types: {
+          select: {
+            id: true,
+            cod: true,
+            label: true,
+          },
+        },
+      },
+    });
+
+    return {
+      message: `Activity ${status.toLowerCase()} successfully`,
+      activity: updated,
     };
   }
 }

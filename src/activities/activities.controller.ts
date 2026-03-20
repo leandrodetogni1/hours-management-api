@@ -4,6 +4,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { ActivitiesService } from './services/activities.service';
@@ -22,5 +24,15 @@ export class ActivitiesController {
   @HttpCode(HttpStatus.CREATED)
   createActivity(@Body() body: CreateActivityDto) {
     return this.activitiesService.createActivity(body);
+  }
+
+  @Patch(':id/approve')
+  approveActivity(@Param('id') id: string) {
+    return this.activitiesService.approveActivity(id);
+  }
+
+  @Patch(':id/reject')
+  rejectActivity(@Param('id') id: string) {
+    return this.activitiesService.rejectActivity(id);
   }
 }
