@@ -55,8 +55,7 @@ export class ActivitiesRepository {
         activityTypeId: dto.activityTypeId,
         category: activityType.category,
         unity: activityType.unity,
-        class:
-          activityType.category === 'EXTENSAO' ? 'LIVRE' : 'COMPLEMENTAR',
+        class: dto.class,
         event: dto.event,
         organization: dto.organization,
         hours: new Prisma.Decimal(dto.hours),

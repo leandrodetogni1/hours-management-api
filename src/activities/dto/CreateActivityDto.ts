@@ -1,12 +1,14 @@
 import { Expose, Type } from 'class-transformer';
 import {
   IsDate,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
 } from 'class-validator';
+import { ActivityClass } from '@prisma/client';
 
 export class CreateActivityDto {
   @Expose()
@@ -18,6 +20,11 @@ export class CreateActivityDto {
   @IsNotEmpty()
   @IsUUID()
   activityTypeId: string;
+
+  @Expose()
+  @IsNotEmpty()
+  @IsEnum(ActivityClass)
+  class: ActivityClass;
 
   @Expose()
   @IsNotEmpty()

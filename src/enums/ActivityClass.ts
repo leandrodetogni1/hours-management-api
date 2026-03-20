@@ -1,4 +1,4 @@
-export enum ActivityType {
+export enum ActivityCategory {
   ENSINO = 'ensino',
   PESQUISA = 'pesquisa',
   EXTENSAO = 'extensão',
