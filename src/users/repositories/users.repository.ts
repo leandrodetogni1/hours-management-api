@@ -2,22 +2,29 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from '../dto/CreateUserDto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import {
+  CreateUserResponseDto,
+  UserResponseDto,
+} from '../dto/UserResponseDto';
+import { UserMapper } from '../mappers/user.mapper';
 
 @Injectable()
 export class UsersRepository {
   constructor(private prisma: PrismaService) {}
 
-  getAll() {
-    return this.prisma.users.findMany();
+  async getAll(): Promise<UserResponseDto[]> {
+    const users = await this.prisma.users.findMany();
+    return users.map(UserMapper.toResponseDto);
   }
 
-  findById(id: string) {
-    return this.prisma.users.findUnique({
+  async findById(id: string): Promise<UserResponseDto | null> {
+    const user = await this.prisma.users.findUnique({
       where: { id },
     });
+    return user ? UserMapper.toResponseDto(user) : null;
   }
 
-  async createUser(user: CreateUserDto) {
+  async createUser(user: CreateUserDto): Promise<CreateUserResponseDto> {
     try {
       const createdUser = await this.prisma.users.create({
         data: {
@@ -34,7 +41,7 @@ export class UsersRepository {
 
       return {
         message: 'User created successfully',
-        user: createdUser,
+        user: UserMapper.toSummaryDto(createdUser),
       };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {

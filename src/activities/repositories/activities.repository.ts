@@ -2,35 +2,46 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, Status } from '@prisma/client';
+import {
+  ActivityResponseDto,
+  CreateActivityResponseDto,
+  UpdateActivityStatusResponseDto,
+} from '../dto/ActivityResponseDto';
+import { ActivityMapper } from '../mappers/activity.mapper';
+
+const activityInclude = {
+  users: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+    },
+  },
+  activity_types: {
+    select: {
+      id: true,
+      cod: true,
+      label: true,
+    },
+  },
+} as const;
 
 @Injectable()
 export class ActivitiesRepository {
   constructor(private prisma: PrismaService) {}
 
-  getAll() {
-    return this.prisma.activities.findMany({
-      include: {
-        users: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        activity_types: {
-          select: {
-            id: true,
-            cod: true,
-            label: true,
-          },
-        },
-      },
+  async getAll(): Promise<ActivityResponseDto[]> {
+    const activities = await this.prisma.activities.findMany({
+      include: activityInclude,
       orderBy: { createdAt: 'desc' },
     });
+    return activities.map(ActivityMapper.toResponseDto);
   }
 
-  async createActivity(dto: CreateActivityDto) {
+  async createActivity(
+    dto: CreateActivityDto,
+  ): Promise<CreateActivityResponseDto> {
     const activityType = await this.prisma.activity_types.findUnique({
       where: { id: dto.activityTypeId },
     });
@@ -62,32 +73,19 @@ export class ActivitiesRepository {
         startDate: dto.startDate,
         endDate: dto.endDate,
       },
-      include: {
-        users: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        activity_types: {
-          select: {
-            id: true,
-            cod: true,
-            label: true,
-          },
-        },
-      },
+      include: activityInclude,
     });
 
     return {
       message: 'Activity created successfully',
-      activity,
+      activity: ActivityMapper.toResponseDto(activity),
     };
   }
 
-  async updateActivityStatus(id: string, status: Status) {
+  async updateActivityStatus(
+    id: string,
+    status: Status,
+  ): Promise<UpdateActivityStatusResponseDto> {
     const activity = await this.prisma.activities.findUnique({
       where: { id },
     });
@@ -99,28 +97,12 @@ export class ActivitiesRepository {
     const updated = await this.prisma.activities.update({
       where: { id },
       data: { status },
-      include: {
-        users: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        activity_types: {
-          select: {
-            id: true,
-            cod: true,
-            label: true,
-          },
-        },
-      },
+      include: activityInclude,
     });
 
     return {
       message: `Activity ${status.toLowerCase()} successfully`,
-      activity: updated,
+      activity: ActivityMapper.toResponseDto(updated),
     };
   }
 }

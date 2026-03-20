@@ -10,24 +10,25 @@ import {
 
 import { UsersService } from './services/users.service';
 import { CreateUserDto } from './dto/CreateUserDto';
+import { CreateUserResponseDto, UserResponseDto } from './dto/UserResponseDto';
 
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Get()
-  findAll() {
+  findAll(): Promise<UserResponseDto[]> {
     return this.usersService.getAllUsers();
   }
 
   @Get(':id')
-  findById(@Param('id') id: string) {
+  findById(@Param('id') id: string): Promise<UserResponseDto> {
     return this.usersService.getUserById(id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  createUser(@Body() body: CreateUserDto) {
+  createUser(@Body() body: CreateUserDto): Promise<CreateUserResponseDto> {
     return this.usersService.createUser(body);
   }
 }

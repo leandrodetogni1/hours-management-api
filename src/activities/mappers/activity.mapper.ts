@@ -1,0 +1,50 @@
+import { ActivityResponseDto } from '../dto/ActivityResponseDto';
+
+export class ActivityMapper {
+  static toResponseDto(activity: {
+    id: string;
+    authorId: string | null;
+    unity: string | null;
+    status: string | null;
+    category: string | null;
+    class: string | null;
+    activityTypeId: string | null;
+    event: string | null;
+    organization: string | null;
+    hours: { toNumber(): number } | null;
+    startDate: Date | null;
+    endDate: Date | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+    users: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    } | null;
+    activity_types: {
+      id: string;
+      cod: string;
+      label: string;
+    } | null;
+  }): ActivityResponseDto {
+    return {
+      id: activity.id,
+      authorId: activity.authorId,
+      unity: activity.unity,
+      status: activity.status,
+      category: activity.category,
+      class: activity.class,
+      activityTypeId: activity.activityTypeId,
+      event: activity.event,
+      organization: activity.organization,
+      hours: activity.hours?.toNumber() ?? null,
+      startDate: activity.startDate?.toISOString() ?? null,
+      endDate: activity.endDate?.toISOString() ?? null,
+      createdAt: activity.createdAt?.toISOString() ?? null,
+      updatedAt: activity.updatedAt?.toISOString() ?? null,
+      users: activity.users,
+      activity_types: activity.activity_types,
+    };
+  }
+}
