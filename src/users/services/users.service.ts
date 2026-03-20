@@ -25,4 +25,8 @@ export class UsersService {
   createUser(user: CreateUserDto): Promise<CreateUserResponseDto> {
     return this.usersRepository.createUser(user);
   }
+
+  deleteUser(id: string): Promise<void> {
+    return this.usersRepository.deleteUser(id);
+  }
 }

@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from '../dto/CreateUserDto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
@@ -51,5 +55,18 @@ export class UsersRepository {
       }
       throw new Error(`Failed to create user: ${error}`);
     }
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const user = await this.prisma.users.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.activities.deleteMany({ where: { authorId: id } }),
+      this.prisma.users.delete({ where: { id } }),
+    ]);
   }
 }

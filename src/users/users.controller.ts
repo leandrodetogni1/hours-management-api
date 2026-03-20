@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -30,5 +31,11 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   createUser(@Body() body: CreateUserDto): Promise<CreateUserResponseDto> {
     return this.usersService.createUser(body);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteUser(@Param('id') id: string): Promise<void> {
+    return this.usersService.deleteUser(id);
   }
 }
