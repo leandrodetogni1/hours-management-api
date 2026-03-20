@@ -45,7 +45,6 @@ model activities {
   activityTypeId String?         @map("activitytypeid") @db.Uuid
   event          String?         @db.VarChar(255)
   organization String?     @db.VarChar(255)
-  number       Int?
   hours        Decimal?    @db.Decimal(10, 2)
   startDate    DateTime?   @map("startdate") @db.Date
   endDate      DateTime?   @map("enddate") @db.Date

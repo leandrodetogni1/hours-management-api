@@ -66,7 +66,6 @@ export class ActivitiesRepository {
             activityType.category === 'EXTENSAO' ? 'LIVRE' : 'COMPLEMENTAR',
           event: dto.event,
           organization: dto.organization,
-          number: dto.number,
           hours: new Prisma.Decimal(dto.hours),
           startDate: dto.startDate,
           endDate: dto.endDate,

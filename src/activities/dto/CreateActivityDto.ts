@@ -30,12 +30,6 @@ export class CreateActivityDto {
   organization?: string;
 
   @Expose()
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  number?: number;
-
-  @Expose()
   @IsNotEmpty()
   @IsNumber()
   @Type(() => Number)
