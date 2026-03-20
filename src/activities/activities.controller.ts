@@ -5,10 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  UploadedFiles,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import { ActivitiesService } from './services/activities.service';
 import { CreateActivityDto } from './dto/CreateActivityDto';
 
@@ -23,13 +20,7 @@ export class ActivitiesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(FilesInterceptor('files'))
-  createActivity(
-    @Body() body: CreateActivityDto,
-    @UploadedFiles() files: Express.Multer.File[],
-  ) {
-    console.log('Received files:', files);
-    console.log(body);
-    return this.activitiesService.createActivity(body, files);
+  createActivity(@Body() body: CreateActivityDto) {
+    return this.activitiesService.createActivity(body);
   }
 }

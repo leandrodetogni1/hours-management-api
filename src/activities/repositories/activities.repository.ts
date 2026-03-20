@@ -25,18 +25,12 @@ export class ActivitiesRepository {
             label: true,
           },
         },
-        files: {
-          select: {
-            id: true,
-            updatedAt: true,
-          },
-        },
       },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async createActivity(dto: CreateActivityDto, files: Express.Multer.File[]) {
+  async createActivity(dto: CreateActivityDto) {
     const activityType = await this.prisma.activity_types.findUnique({
       where: { id: dto.activityTypeId },
     });
@@ -55,58 +49,37 @@ export class ActivitiesRepository {
       throw new NotFoundException(`User with id ${dto.authorId} not found`);
     }
 
-    const activity = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.activities.create({
-        data: {
-          authorId: dto.authorId,
-          activityTypeId: dto.activityTypeId,
-          category: activityType.category,
-          unity: activityType.unity,
-          class:
-            activityType.category === 'EXTENSAO' ? 'LIVRE' : 'COMPLEMENTAR',
-          event: dto.event,
-          organization: dto.organization,
-          hours: new Prisma.Decimal(dto.hours),
-          startDate: dto.startDate,
-          endDate: dto.endDate,
-        },
-      });
-
-      if (files && files.length > 0) {
-        await tx.files.createMany({
-          data: files.map((file) => ({
-            activityId: created.id,
-            file: Buffer.from(file.buffer),
-          })),
-        });
-      }
-
-      return tx.activities.findUnique({
-        where: { id: created.id },
-        include: {
-          users: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          activity_types: {
-            select: {
-              id: true,
-              cod: true,
-              label: true,
-            },
-          },
-          files: {
-            select: {
-              id: true,
-              updatedAt: true,
-            },
+    const activity = await this.prisma.activities.create({
+      data: {
+        authorId: dto.authorId,
+        activityTypeId: dto.activityTypeId,
+        category: activityType.category,
+        unity: activityType.unity,
+        class:
+          activityType.category === 'EXTENSAO' ? 'LIVRE' : 'COMPLEMENTAR',
+        event: dto.event,
+        organization: dto.organization,
+        hours: new Prisma.Decimal(dto.hours),
+        startDate: dto.startDate,
+        endDate: dto.endDate,
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
           },
         },
-      });
+        activity_types: {
+          select: {
+            id: true,
+            cod: true,
+            label: true,
+          },
+        },
+      },
     });
 
     return {

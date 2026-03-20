@@ -52,7 +52,6 @@ model activities {
   updatedAt    DateTime?   @map("updatedat") @default(now()) @db.Timestamp(6)
   users          users?          @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   activity_types activity_types? @relation(fields: [activityTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  files        files[]
 }
 
 model activity_types {
@@ -66,13 +65,6 @@ model activity_types {
   activities                      activities[]
 }
 
-model files {
-  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  activityId String?     @map("activityid") @db.Uuid
-  file       Bytes?
-  updatedAt  DateTime?   @map("updatedat") @default(now()) @db.Timestamp(6)
-  activities activities? @relation(fields: [activityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
 
 model users {
   id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid

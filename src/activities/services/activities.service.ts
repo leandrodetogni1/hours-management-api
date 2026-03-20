@@ -10,7 +10,7 @@ export class ActivitiesService {
     return this.activityRepository.getAll();
   }
 
-  createActivity(activity: CreateActivityDto, files: Express.Multer.File[]) {
-    return this.activityRepository.createActivity(activity, files);
+  createActivity(activity: CreateActivityDto) {
+    return this.activityRepository.createActivity(activity);
   }
 }
