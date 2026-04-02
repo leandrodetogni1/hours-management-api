@@ -6,10 +6,7 @@ import {
 import { CreateUserDto } from '../dto/CreateUserDto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import {
-  CreateUserResponseDto,
-  UserResponseDto,
-} from '../dto/UserResponseDto';
+import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { UserMapper } from '../mappers/user.mapper';
 
 @Injectable()

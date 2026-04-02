@@ -1,6 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ActivityTypesRepository } from '../repositories/activity-types.repository';
-import { ActivityTypeResponseDto } from '../dto/ActivityTypeResponseDto';
+import {
+  ActivityTypeResponseDto,
+  CreateActivityTypeResponseDto,
+  DeleteActivityTypeResponseDto,
+  UpdateActivityTypeResponseDto,
+} from '../dto/ActivityTypeResponseDto';
+import { CreateActivityTypeDto } from '../dto/CreateActivityTypeDto';
+import { UpdateActivityTypeDto } from '../dto/UpdateActivityTypeDto';
 
 @Injectable()
 export class ActivityTypesService {
@@ -16,5 +23,22 @@ export class ActivityTypesService {
       throw new NotFoundException(`Activity type with id ${id} not found`);
     }
     return activityType;
+  }
+
+  createActivityType(
+    dto: CreateActivityTypeDto,
+  ): Promise<CreateActivityTypeResponseDto> {
+    return this.activityTypesRepository.create(dto);
+  }
+
+  updateActivityType(
+    id: string,
+    dto: UpdateActivityTypeDto,
+  ): Promise<UpdateActivityTypeResponseDto> {
+    return this.activityTypesRepository.update(id, dto);
+  }
+
+  deleteActivityType(id: string): Promise<DeleteActivityTypeResponseDto> {
+    return this.activityTypesRepository.delete(id);
   }
 }

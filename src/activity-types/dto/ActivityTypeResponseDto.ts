@@ -13,3 +13,17 @@ export interface ActivityTypeSummaryDto {
   cod: string;
   label: string;
 }
+
+export interface CreateActivityTypeResponseDto {
+  message: string;
+  activityType: ActivityTypeResponseDto;
+}
+
+export interface UpdateActivityTypeResponseDto {
+  message: string;
+  activityType: ActivityTypeResponseDto;
+}
+
+export interface DeleteActivityTypeResponseDto {
+  message: string;
+}
