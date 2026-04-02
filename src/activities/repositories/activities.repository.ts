@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, Status } from '@prisma/client';
@@ -92,6 +96,12 @@ export class ActivitiesRepository {
 
     if (!activity) {
       throw new NotFoundException(`Activity with id ${id} not found`);
+    }
+
+    if (activity.status !== Status.PENDING) {
+      throw new BadRequestException(
+        'Apenas atividades com status pendente podem ser aprovadas ou rejeitadas',
+      );
     }
 
     const updated = await this.prisma.activities.update({
