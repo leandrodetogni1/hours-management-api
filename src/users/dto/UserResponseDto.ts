@@ -1,22 +1,34 @@
-export interface UserResponseDto {
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class UserSummaryDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   id: string;
+
+  @ApiProperty({ example: 'joao@ufpel.edu.br' })
   email: string;
+
+  @ApiProperty({ example: 'João' })
   firstName: string;
+
+  @ApiProperty({ example: 'Silva' })
   lastName: string;
+
+  @ApiPropertyOptional({ example: 'MEMBER' })
   role: string | null;
+}
+
+export class UserResponseDto extends UserSummaryDto {
+  @ApiPropertyOptional({ example: '2025-03-01T00:00:00.000Z' })
   createdAt: string | null;
+
+  @ApiPropertyOptional({ example: '2025-03-01T00:00:00.000Z' })
   updatedAt: string | null;
 }
 
-export interface UserSummaryDto {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string | null;
-}
-
-export interface CreateUserResponseDto {
+export class CreateUserResponseDto {
+  @ApiProperty({ example: 'Usuário criado com sucesso' })
   message: string;
+
+  @ApiProperty({ type: UserSummaryDto })
   user: UserSummaryDto;
 }

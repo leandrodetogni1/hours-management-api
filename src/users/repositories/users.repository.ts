@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from '../dto/CreateUserDto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import { Prisma } from '@prisma/client';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { UserMapper } from '../mappers/user.mapper';

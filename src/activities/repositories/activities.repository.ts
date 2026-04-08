@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import { Prisma, Status } from '@prisma/client';
 import {
   ActivityResponseDto,
