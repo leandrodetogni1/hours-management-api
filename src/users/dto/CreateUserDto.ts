@@ -3,7 +3,10 @@ import { Expose, Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateUserDto {
-  @ApiProperty({ example: 'joao@ufpel.edu.br', description: 'Email do usuário' })
+  @ApiProperty({
+    example: 'joao@ufpel.edu.br',
+    description: 'Email do usuário',
+  })
   @Expose()
   @IsEmail({}, { message: 'Email inválido' })
   @IsNotEmpty({ message: 'Email é obrigatório' })

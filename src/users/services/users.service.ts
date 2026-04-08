@@ -1,11 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UsersRepository } from '../repositories/users.repository';
+import { ActivitiesService } from '../../activities/services/activities.service';
 import { CreateUserDto } from '../dto/CreateUserDto';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
+import { ActivityResponseDto } from '../../activities/dto/ActivityResponseDto';
 
 @Injectable()
 export class UsersService {
-  constructor(private usersRepository: UsersRepository) {}
+  constructor(
+    private usersRepository: UsersRepository,
+    private activitiesService: ActivitiesService,
+  ) {}
 
   getAllUsers(): Promise<UserResponseDto[]> {
     return this.usersRepository.getAll();
@@ -25,5 +30,13 @@ export class UsersService {
 
   deleteUser(id: string): Promise<void> {
     return this.usersRepository.deleteUser(id);
+  }
+
+  async getUserActivities(userId: string): Promise<ActivityResponseDto[]> {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+    return this.activitiesService.getActivitiesByUserId(userId);
   }
 }

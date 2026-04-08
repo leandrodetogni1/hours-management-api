@@ -16,7 +16,10 @@ async function bootstrap() {
 
   // Swagger basic auth
   const swaggerUser = configService.get<string>('SWAGGER_USER', 'admin');
-  const swaggerPassword = configService.get<string>('SWAGGER_PASSWORD', 'admin123');
+  const swaggerPassword = configService.get<string>(
+    'SWAGGER_PASSWORD',
+    'admin123',
+  );
 
   app.use(
     '/api/docs{/:path}',
@@ -29,7 +32,9 @@ async function bootstrap() {
   // Swagger config
   const config = new DocumentBuilder()
     .setTitle('Hours Management API')
-    .setDescription('API para gerenciamento de horas complementares - UFPel TCC')
+    .setDescription(
+      'API para gerenciamento de horas complementares - UFPel TCC',
+    )
     .setVersion('1.0')
     .build();
 

@@ -8,12 +8,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ActivitiesService } from './services/activities.service.js';
 import { CreateActivityDto } from './dto/CreateActivityDto.js';
 import {
@@ -29,7 +24,11 @@ export class ActivitiesController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todas as atividades' })
-  @ApiResponse({ status: 200, description: 'Lista de atividades', type: [ActivityResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de atividades',
+    type: [ActivityResponseDto],
+  })
   findAll(): Promise<ActivityResponseDto[]> {
     return this.activitiesService.getAllActivities();
   }
@@ -37,9 +36,16 @@ export class ActivitiesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Criar uma nova atividade' })
-  @ApiResponse({ status: 201, description: 'Atividade criada', type: CreateActivityResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Atividade criada',
+    type: CreateActivityResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 404, description: 'Autor ou tipo de atividade não encontrado' })
+  @ApiResponse({
+    status: 404,
+    description: 'Autor ou tipo de atividade não encontrado',
+  })
   createActivity(
     @Body() body: CreateActivityDto,
   ): Promise<CreateActivityResponseDto> {
@@ -49,9 +55,16 @@ export class ActivitiesController {
   @Patch(':id/approve')
   @ApiOperation({ summary: 'Aprovar uma atividade' })
   @ApiParam({ name: 'id', description: 'UUID da atividade' })
-  @ApiResponse({ status: 200, description: 'Atividade aprovada', type: UpdateActivityStatusResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Atividade aprovada',
+    type: UpdateActivityStatusResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
-  @ApiResponse({ status: 400, description: 'Atividade já foi aprovada ou rejeitada' })
+  @ApiResponse({
+    status: 400,
+    description: 'Atividade já foi aprovada ou rejeitada',
+  })
   approveActivity(
     @Param('id') id: string,
   ): Promise<UpdateActivityStatusResponseDto> {
@@ -61,9 +74,16 @@ export class ActivitiesController {
   @Patch(':id/reject')
   @ApiOperation({ summary: 'Rejeitar uma atividade' })
   @ApiParam({ name: 'id', description: 'UUID da atividade' })
-  @ApiResponse({ status: 200, description: 'Atividade rejeitada', type: UpdateActivityStatusResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Atividade rejeitada',
+    type: UpdateActivityStatusResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
-  @ApiResponse({ status: 400, description: 'Atividade já foi aprovada ou rejeitada' })
+  @ApiResponse({
+    status: 400,
+    description: 'Atividade já foi aprovada ou rejeitada',
+  })
   rejectActivity(
     @Param('id') id: string,
   ): Promise<UpdateActivityStatusResponseDto> {

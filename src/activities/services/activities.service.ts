@@ -16,6 +16,10 @@ export class ActivitiesService {
     return this.activityRepository.getAll();
   }
 
+  getActivitiesByUserId(userId: string): Promise<ActivityResponseDto[]> {
+    return this.activityRepository.getByAuthorId(userId);
+  }
+
   createActivity(
     activity: CreateActivityDto,
   ): Promise<CreateActivityResponseDto> {

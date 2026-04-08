@@ -9,12 +9,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ActivityTypesService } from './services/activity-types.service.js';
 import {
   ActivityTypeResponseDto,
@@ -31,7 +26,11 @@ export class ActivityTypesController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os tipos de atividade' })
-  @ApiResponse({ status: 200, description: 'Lista de tipos de atividade', type: [ActivityTypeResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de tipos de atividade',
+    type: [ActivityTypeResponseDto],
+  })
   findAll(): Promise<ActivityTypeResponseDto[]> {
     return this.activityTypesService.getAllActivityTypes();
   }
@@ -39,7 +38,11 @@ export class ActivityTypesController {
   @Get(':id')
   @ApiOperation({ summary: 'Buscar tipo de atividade por ID' })
   @ApiParam({ name: 'id', description: 'UUID do tipo de atividade' })
-  @ApiResponse({ status: 200, description: 'Tipo de atividade encontrado', type: ActivityTypeResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Tipo de atividade encontrado',
+    type: ActivityTypeResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Tipo de atividade não encontrado' })
   findById(@Param('id') id: string): Promise<ActivityTypeResponseDto> {
     return this.activityTypesService.getActivityTypeById(id);
@@ -48,7 +51,11 @@ export class ActivityTypesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Criar um novo tipo de atividade' })
-  @ApiResponse({ status: 201, description: 'Tipo de atividade criado', type: CreateActivityTypeResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Tipo de atividade criado',
+    type: CreateActivityTypeResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   create(
     @Body() body: CreateActivityTypeDto,
@@ -59,7 +66,11 @@ export class ActivityTypesController {
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar tipo de atividade' })
   @ApiParam({ name: 'id', description: 'UUID do tipo de atividade' })
-  @ApiResponse({ status: 200, description: 'Tipo de atividade atualizado', type: UpdateActivityTypeResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Tipo de atividade atualizado',
+    type: UpdateActivityTypeResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Tipo de atividade não encontrado' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   update(

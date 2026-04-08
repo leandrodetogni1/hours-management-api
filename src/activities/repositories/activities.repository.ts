@@ -43,6 +43,15 @@ export class ActivitiesRepository {
     return activities.map(ActivityMapper.toResponseDto);
   }
 
+  async getByAuthorId(authorId: string): Promise<ActivityResponseDto[]> {
+    const activities = await this.prisma.activities.findMany({
+      where: { authorId },
+      include: activityInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+    return activities.map(ActivityMapper.toResponseDto);
+  }
+
   async createActivity(
     dto: CreateActivityDto,
   ): Promise<CreateActivityResponseDto> {
