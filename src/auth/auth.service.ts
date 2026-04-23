@@ -15,7 +15,7 @@ import { UserResponseDto } from '../users/dto/UserResponseDto.js';
 import { AuthResponseDto } from './dto/AuthResponseDto.js';
 import { UserSituation } from '../enums/UserSituation.js';
 
-const DEFAULT_ROLE_NAME = 'student';
+const DEFAULT_ROLE_NAME = 'member';
 
 @Injectable()
 export class AuthService implements OnModuleInit {

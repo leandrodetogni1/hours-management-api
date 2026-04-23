@@ -72,11 +72,11 @@ export class ActivitiesController {
     return this.activitiesService.createActivity(user.sub, body);
   }
 
-  @Roles('admin', 'coordinator')
+  @Roles('admin', 'reviewer')
   @Patch(':id/approve')
   @ApiOperation({
     summary:
-      'Aprovar uma atividade (a partir de PENDING ou VERIFIED) — admin/coordinator',
+      'Aprovar uma atividade (a partir de PENDING ou VERIFIED) — admin/reviewer',
   })
   @ApiParam({ name: 'id', description: 'UUID da atividade' })
   @ApiResponse({
@@ -88,7 +88,7 @@ export class ActivitiesController {
   @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
   @ApiResponse({
     status: 403,
-    description: 'Perfil sem permissão (admin ou coordinator)',
+    description: 'Perfil sem permissão (admin ou reviewer)',
   })
   @ApiResponse({
     status: 400,
@@ -101,11 +101,11 @@ export class ActivitiesController {
     return this.activitiesService.approveActivity(id);
   }
 
-  @Roles('admin', 'coordinator')
+  @Roles('admin', 'reviewer')
   @Patch(':id/reject')
   @ApiOperation({
     summary:
-      'Rejeitar uma atividade (a partir de PENDING ou VERIFIED) — admin/coordinator',
+      'Rejeitar uma atividade (a partir de PENDING ou VERIFIED) — admin/reviewer',
   })
   @ApiParam({ name: 'id', description: 'UUID da atividade' })
   @ApiResponse({
@@ -117,7 +117,7 @@ export class ActivitiesController {
   @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
   @ApiResponse({
     status: 403,
-    description: 'Perfil sem permissão (admin ou coordinator)',
+    description: 'Perfil sem permissão (admin ou reviewer)',
   })
   @ApiResponse({
     status: 400,
@@ -130,11 +130,11 @@ export class ActivitiesController {
     return this.activitiesService.rejectActivity(id);
   }
 
-  @Roles('admin', 'coordinator')
+  @Roles('admin', 'reviewer')
   @Patch(':id/verify')
   @ApiOperation({
     summary:
-      'Verificar uma atividade (a partir de PENDING) — admin/coordinator',
+      'Verificar uma atividade (a partir de PENDING) — admin/reviewer',
   })
   @ApiParam({ name: 'id', description: 'UUID da atividade' })
   @ApiResponse({
@@ -146,7 +146,7 @@ export class ActivitiesController {
   @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
   @ApiResponse({
     status: 403,
-    description: 'Perfil sem permissão (admin ou coordinator)',
+    description: 'Perfil sem permissão (admin ou reviewer)',
   })
   @ApiResponse({
     status: 400,

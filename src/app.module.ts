@@ -4,7 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
-import { ActivitiesModule } from './activities/activites.module';
+import { ActivitiesModule } from './activities/activities.module';
 import { ActivityTypesModule } from './activity-types/activity-types.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';

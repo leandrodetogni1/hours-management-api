@@ -4,10 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from '../dto/CreateUserDto';
+import { UpdateUserDto } from '../dto/UpdateUserDto';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { Prisma } from '@prisma/client';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { UserMapper } from '../mappers/user.mapper';
+import { UserCourse } from '../../enums/UserCourse';
 import { UserSituation } from '../../enums/UserSituation';
 
 @Injectable()
@@ -39,7 +41,8 @@ export class UsersRepository {
           lastName: user.lastName,
           matricula: user.matricula,
           situation: user.situation ?? null,
-          role: { connect: { name: 'MEMBER' } },
+          course: user.course ?? null,
+          role: { connect: { name: 'member' } },
         },
         select: {
           id: true,
@@ -48,6 +51,7 @@ export class UsersRepository {
           lastName: true,
           matricula: true,
           situation: true,
+          course: true,
           role: { select: { name: true } },
         },
       });
@@ -57,6 +61,7 @@ export class UsersRepository {
         user: UserMapper.toSummaryDto({
           ...createdUser,
           situation: createdUser.situation as UserSituation | null,
+          course: createdUser.course as UserCourse | null,
         }),
       };
     } catch (error) {
@@ -67,6 +72,28 @@ export class UsersRepository {
       }
       throw new Error(`Failed to create user: ${error}`);
     }
+  }
+
+  async updateUser(id: string, data: UpdateUserDto): Promise<UserResponseDto> {
+    const existing = await this.prisma.users.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+
+    const updated = await this.prisma.users.update({
+      where: { id },
+      data: {
+        ...(data.firstName !== undefined && { firstName: data.firstName }),
+        ...(data.lastName !== undefined && { lastName: data.lastName }),
+        ...(data.matricula !== undefined && { matricula: data.matricula }),
+        ...(data.situation !== undefined && { situation: data.situation }),
+        ...(data.course !== undefined && { course: data.course }),
+        updatedAt: new Date(),
+      },
+      include: { role: true },
+    });
+
+    return UserMapper.toResponseDto(updated);
   }
 
   async deleteUser(id: string): Promise<void> {

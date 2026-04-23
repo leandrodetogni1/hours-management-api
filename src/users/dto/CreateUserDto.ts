@@ -8,6 +8,7 @@ import {
   IsString,
   Matches,
 } from 'class-validator';
+import { UserCourse } from '../../enums/UserCourse.js';
 import { UserSituation } from '../../enums/UserSituation.js';
 
 export class CreateUserDto {
@@ -59,4 +60,17 @@ export class CreateUserDto {
     message: 'Situação inválida. Use: REGULAR, FORMANDO ou FORMADO',
   })
   situation?: UserSituation;
+
+  @ApiPropertyOptional({
+    example: 'CIENCIA_DA_COMPUTACAO',
+    enum: UserCourse,
+    description: 'Curso do usuário',
+  })
+  @Expose()
+  @IsOptional()
+  @IsEnum(UserCourse, {
+    message:
+      'Curso inválido. Use: CIENCIA_DA_COMPUTACAO ou ENGENHARIA_DA_COMPUTACAO',
+  })
+  course?: UserCourse;
 }

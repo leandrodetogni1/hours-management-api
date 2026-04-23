@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { UserCourse } from '../../enums/UserCourse.js';
 import { UserSituation } from '../../enums/UserSituation.js';
 
 export class UserSummaryDto {
@@ -16,7 +17,7 @@ export class UserSummaryDto {
 
   @ApiProperty({
     example: 'MEMBER',
-    enum: ['OWNER', 'ADMIN', 'REVIEWER', 'MEMBER'],
+    enum: ['owner', 'admin', 'reviewer', 'member'],
   })
   role: string;
 
@@ -25,6 +26,12 @@ export class UserSummaryDto {
 
   @ApiPropertyOptional({ example: 'REGULAR', enum: UserSituation })
   situation: UserSituation | null;
+
+  @ApiPropertyOptional({
+    example: 'CIENCIA_DA_COMPUTACAO',
+    enum: UserCourse,
+  })
+  course: UserCourse | null;
 }
 
 export class UserResponseDto extends UserSummaryDto {

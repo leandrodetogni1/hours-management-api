@@ -8,10 +8,16 @@ CREATE TYPE "Category" AS ENUM ('ENSINO', 'PESQUISA', 'EXTENSAO');
 CREATE TYPE "Unity" AS ENUM ('SEMESTRE', 'HORAS', 'UNIDADE');
 
 -- CreateEnum
-CREATE TYPE "Status" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+CREATE TYPE "Status" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'VERIFIED');
 
 -- CreateEnum
 CREATE TYPE "ActivityClass" AS ENUM ('COMPLEMENTAR', 'LIVRE');
+
+-- CreateEnum
+CREATE TYPE "UserSituation" AS ENUM ('REGULAR', 'FORMANDO', 'FORMADO');
+
+-- CreateEnum
+CREATE TYPE "Course" AS ENUM ('CIENCIA_DA_COMPUTACAO', 'ENGENHARIA_DA_COMPUTACAO');
 
 -- CreateTable
 CREATE TABLE "roles" (
@@ -59,10 +65,14 @@ CREATE TABLE "users" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "firstname" VARCHAR(255) NOT NULL,
     "lastname" VARCHAR(255) NOT NULL,
+    "picture" VARCHAR(500),
     "roleid" UUID NOT NULL,
     "createdat" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "updatedat" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
     "email" VARCHAR(255) NOT NULL,
+    "matricula" VARCHAR(20),
+    "situation" "UserSituation",
+    "course" "Course",
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -86,4 +96,5 @@ ALTER TABLE "activities" ADD CONSTRAINT "activities_activitytypeid_fkey" FOREIGN
 ALTER TABLE "users" ADD CONSTRAINT "users_roleid_fkey" FOREIGN KEY ("roleid") REFERENCES "roles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- Seed default roles
-INSERT INTO "roles" ("name") VALUES ('OWNER'), ('ADMIN'), ('REVIEWER'), ('MEMBER');
+INSERT INTO "roles" ("name") VALUES ('owner'), ('admin'), ('reviewer'), ('member');
+

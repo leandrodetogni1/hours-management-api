@@ -36,6 +36,11 @@ enum UserSituation {
   FORMADO
 }
 
+enum Course {
+  CIENCIA_DA_COMPUTACAO
+  ENGENHARIA_DA_COMPUTACAO
+}
+
 model roles {
   id    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name  String  @unique @db.VarChar(50)
@@ -85,5 +90,6 @@ model users {
   email      String         @unique @db.VarChar(255)
   matricula  String?        @db.VarChar(20)
   situation  UserSituation?
+  course     Course?
   activities activities[]
 }

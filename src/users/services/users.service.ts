@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { UsersRepository } from '../repositories/users.repository';
 import { ActivitiesService } from '../../activities/services/activities.service';
 import { CreateUserDto } from '../dto/CreateUserDto';
+import { UpdateUserDto } from '../dto/UpdateUserDto';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { ActivityResponseDto } from '../../activities/dto/ActivityResponseDto';
 import { UserSituation } from '../../enums/UserSituation';
@@ -27,6 +28,10 @@ export class UsersService {
 
   createUser(user: CreateUserDto): Promise<CreateUserResponseDto> {
     return this.usersRepository.createUser(user);
+  }
+
+  updateUser(id: string, data: UpdateUserDto): Promise<UserResponseDto> {
+    return this.usersRepository.updateUser(id, data);
   }
 
   deleteUser(id: string): Promise<void> {

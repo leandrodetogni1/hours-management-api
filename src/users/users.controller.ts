@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import {
 
 import { UsersService } from './services/users.service.js';
 import { CreateUserDto } from './dto/CreateUserDto.js';
+import { UpdateUserDto } from './dto/UpdateUserDto.js';
 import {
   CreateUserResponseDto,
   UserResponseDto,
@@ -76,6 +78,24 @@ export class UsersController {
   })
   createUser(@Body() body: CreateUserDto): Promise<CreateUserResponseDto> {
     return this.usersService.createUser(body);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Atualizar dados do usuário' })
+  @ApiParam({ name: 'id', description: 'UUID do usuário' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuário atualizado',
+    type: UserResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
+  updateUser(
+    @Param('id') id: string,
+    @Body() body: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    return this.usersService.updateUser(id, body);
   }
 
   @Get(':userId/activities')
