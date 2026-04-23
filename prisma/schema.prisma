@@ -22,6 +22,7 @@ enum Status {
   PENDING
   APPROVED
   REJECTED
+  VERIFIED
 }
 
 enum ActivityClass {

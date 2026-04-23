@@ -53,7 +53,9 @@ export class ActivitiesController {
   }
 
   @Patch(':id/approve')
-  @ApiOperation({ summary: 'Aprovar uma atividade' })
+  @ApiOperation({
+    summary: 'Aprovar uma atividade (a partir de PENDING ou VERIFIED)',
+  })
   @ApiParam({ name: 'id', description: 'UUID da atividade' })
   @ApiResponse({
     status: 200,
@@ -63,7 +65,8 @@ export class ActivitiesController {
   @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
   @ApiResponse({
     status: 400,
-    description: 'Atividade já foi aprovada ou rejeitada',
+    description:
+      'Transição de status inválida (só é permitido aprovar atividades PENDING ou VERIFIED)',
   })
   approveActivity(
     @Param('id') id: string,
@@ -72,7 +75,9 @@ export class ActivitiesController {
   }
 
   @Patch(':id/reject')
-  @ApiOperation({ summary: 'Rejeitar uma atividade' })
+  @ApiOperation({
+    summary: 'Rejeitar uma atividade (a partir de PENDING ou VERIFIED)',
+  })
   @ApiParam({ name: 'id', description: 'UUID da atividade' })
   @ApiResponse({
     status: 200,
@@ -82,11 +87,34 @@ export class ActivitiesController {
   @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
   @ApiResponse({
     status: 400,
-    description: 'Atividade já foi aprovada ou rejeitada',
+    description:
+      'Transição de status inválida (só é permitido rejeitar atividades PENDING ou VERIFIED)',
   })
   rejectActivity(
     @Param('id') id: string,
   ): Promise<UpdateActivityStatusResponseDto> {
     return this.activitiesService.rejectActivity(id);
+  }
+
+  @Patch(':id/verify')
+  @ApiOperation({
+    summary: 'Verificar uma atividade (a partir de PENDING)',
+  })
+  @ApiParam({ name: 'id', description: 'UUID da atividade' })
+  @ApiResponse({
+    status: 200,
+    description: 'Atividade verificada',
+    type: UpdateActivityStatusResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Transição de status inválida (só é permitido verificar atividades PENDING)',
+  })
+  verifyActivity(
+    @Param('id') id: string,
+  ): Promise<UpdateActivityStatusResponseDto> {
+    return this.activitiesService.verifyActivity(id);
   }
 }

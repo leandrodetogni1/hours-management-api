@@ -13,6 +13,13 @@ import {
 } from '../dto/ActivityResponseDto';
 import { ActivityMapper } from '../mappers/activity.mapper';
 
+const allowedSourceStatuses: Record<Status, Status[]> = {
+  [Status.PENDING]: [],
+  [Status.VERIFIED]: [Status.PENDING],
+  [Status.APPROVED]: [Status.PENDING, Status.VERIFIED],
+  [Status.REJECTED]: [Status.PENDING, Status.VERIFIED],
+};
+
 const activityInclude = {
   users: {
     select: {
@@ -107,9 +114,12 @@ export class ActivitiesRepository {
       throw new NotFoundException(`Activity with id ${id} not found`);
     }
 
-    if (activity.status !== Status.PENDING) {
+    const currentStatus = activity.status ?? Status.PENDING;
+    const allowedSources = allowedSourceStatuses[status];
+
+    if (!allowedSources.includes(currentStatus)) {
       throw new BadRequestException(
-        'Apenas atividades com status pendente podem ser aprovadas ou rejeitadas',
+        `Não é possível alterar o status de ${currentStatus} para ${status}`,
       );
     }
 

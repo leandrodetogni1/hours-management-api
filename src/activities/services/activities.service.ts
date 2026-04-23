@@ -33,4 +33,8 @@ export class ActivitiesService {
   rejectActivity(id: string): Promise<UpdateActivityStatusResponseDto> {
     return this.activityRepository.updateActivityStatus(id, Status.REJECTED);
   }
+
+  verifyActivity(id: string): Promise<UpdateActivityStatusResponseDto> {
+    return this.activityRepository.updateActivityStatus(id, Status.VERIFIED);
+  }
 }
