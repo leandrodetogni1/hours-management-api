@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ActivitiesService } from './services/activities.service.js';
@@ -16,6 +17,7 @@ import {
   CreateActivityResponseDto,
   UpdateActivityStatusResponseDto,
 } from './dto/ActivityResponseDto.js';
+import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
 
 @ApiTags('Activities')
 @Controller('activities')
@@ -23,14 +25,14 @@ export class ActivitiesController {
   constructor(private activitiesService: ActivitiesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar todas as atividades' })
+  @ApiOperation({ summary: 'Listar atividades (filtro opcional por userId)' })
   @ApiResponse({
     status: 200,
     description: 'Lista de atividades',
     type: [ActivityResponseDto],
   })
-  findAll(): Promise<ActivityResponseDto[]> {
-    return this.activitiesService.getAllActivities();
+  findAll(@Query() query: GetActivitiesQueryDto): Promise<ActivityResponseDto[]> {
+    return this.activitiesService.getAllActivities(query.authorId);
   }
 
   @Post()

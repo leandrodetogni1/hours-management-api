@@ -12,7 +12,10 @@ import {
 export class ActivitiesService {
   constructor(private activityRepository: ActivitiesRepository) {}
 
-  getAllActivities(): Promise<ActivityResponseDto[]> {
+  getAllActivities(authorId?: string): Promise<ActivityResponseDto[]> {
+    if (authorId) {
+      return this.activityRepository.getByAuthorId(authorId);
+    }
     return this.activityRepository.getAll();
   }
 
