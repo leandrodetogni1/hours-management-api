@@ -14,13 +14,16 @@ export class UsersRepository {
   constructor(private prisma: PrismaService) {}
 
   async getAll(): Promise<UserResponseDto[]> {
-    const users = await this.prisma.users.findMany();
-    return users.map(UserMapper.toResponseDto);
+    const users = await this.prisma.users.findMany({
+      include: { role: true },
+    });
+    return users.map((user) => UserMapper.toResponseDto(user));
   }
 
   async findById(id: string): Promise<UserResponseDto | null> {
     const user = await this.prisma.users.findUnique({
       where: { id },
+      include: { role: true },
     });
     return user ? UserMapper.toResponseDto(user) : null;
   }
@@ -30,13 +33,14 @@ export class UsersRepository {
       const createdUser = await this.prisma.users.create({
         data: {
           ...user,
+          role: { connect: { name: 'MEMBER' } },
         },
         select: {
           id: true,
           email: true,
           firstName: true,
           lastName: true,
-          role: true,
+          role: { select: { name: true } },
         },
       });
 

@@ -29,10 +29,10 @@ enum ActivityClass {
   LIVRE
 }
 
-enum Role {
-  OWNER
-  ADMIN
-  MEMBER
+model roles {
+  id    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name  String  @unique @db.VarChar(50)
+  users users[]
 }
 
 model activities {
@@ -70,7 +70,8 @@ model users {
   id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firstName  String       @map("firstname") @db.VarChar(255)
   lastName   String       @map("lastname") @db.VarChar(255)
-  role       Role?        @default(MEMBER)
+  roleId     String       @map("roleid") @db.Uuid
+  role       roles        @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   createdAt  DateTime?    @map("createdat") @default(now()) @db.Timestamp(6)
   updatedAt  DateTime?    @map("updatedat") @default(now()) @db.Timestamp(6)
   email      String       @unique @db.VarChar(255)

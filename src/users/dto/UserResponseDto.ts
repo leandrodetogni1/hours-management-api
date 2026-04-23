@@ -13,8 +13,11 @@ export class UserSummaryDto {
   @ApiProperty({ example: 'Silva' })
   lastName: string;
 
-  @ApiPropertyOptional({ example: 'MEMBER' })
-  role: string | null;
+  @ApiProperty({
+    example: 'MEMBER',
+    enum: ['OWNER', 'ADMIN', 'REVIEWER', 'MEMBER'],
+  })
+  role: string;
 }
 
 export class UserResponseDto extends UserSummaryDto {

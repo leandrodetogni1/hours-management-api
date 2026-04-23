@@ -1,14 +1,16 @@
-import { users } from '@prisma/client';
+import { users, roles } from '@prisma/client';
 import { UserResponseDto, UserSummaryDto } from '../dto/UserResponseDto';
 
+type UserWithRole = users & { role: roles };
+
 export class UserMapper {
-  static toResponseDto(user: users): UserResponseDto {
+  static toResponseDto(user: UserWithRole): UserResponseDto {
     return {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
+      role: user.role.name,
       createdAt: user.createdAt?.toISOString() ?? null,
       updatedAt: user.updatedAt?.toISOString() ?? null,
     };
@@ -19,14 +21,14 @@ export class UserMapper {
     email: string;
     firstName: string;
     lastName: string;
-    role: string | null;
+    role: { name: string };
   }): UserSummaryDto {
     return {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
+      role: user.role.name,
     };
   }
 }
