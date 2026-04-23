@@ -30,6 +30,12 @@ enum ActivityClass {
   LIVRE
 }
 
+enum UserSituation {
+  REGULAR
+  FORMANDO
+  FORMADO
+}
+
 model roles {
   id    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name  String  @unique @db.VarChar(50)
@@ -75,6 +81,8 @@ model users {
   role       roles        @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   createdAt  DateTime?    @map("createdat") @default(now()) @db.Timestamp(6)
   updatedAt  DateTime?    @map("updatedat") @default(now()) @db.Timestamp(6)
-  email      String       @unique @db.VarChar(255)
+  email      String         @unique @db.VarChar(255)
+  matricula  String?        @db.VarChar(20)
+  situation  UserSituation?
   activities activities[]
 }

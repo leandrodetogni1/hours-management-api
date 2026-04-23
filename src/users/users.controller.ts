@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
@@ -17,6 +18,7 @@ import {
   UserResponseDto,
 } from './dto/UserResponseDto.js';
 import { ActivityResponseDto } from '../activities/dto/ActivityResponseDto.js';
+import { GetUsersQueryDto } from './dto/GetUsersQueryDto.js';
 
 @ApiTags('Users')
 @Controller('users')
@@ -30,8 +32,8 @@ export class UsersController {
     description: 'Lista de usuários',
     type: [UserResponseDto],
   })
-  findAll(): Promise<UserResponseDto[]> {
-    return this.usersService.getAllUsers();
+  findAll(@Query() query: GetUsersQueryDto): Promise<UserResponseDto[]> {
+    return this.usersService.getAllUsers(query.situation);
   }
 
   @Get(':id')

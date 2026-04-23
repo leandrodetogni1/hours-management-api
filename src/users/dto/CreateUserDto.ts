@@ -1,6 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
+import { UserSituation } from '../../enums/UserSituation.js';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -29,4 +37,26 @@ export class CreateUserDto {
     ({ value }) => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase(),
   )
   lastName: string;
+
+  @ApiProperty({
+    example: '12345678',
+    description: 'Número de matrícula do usuário',
+  })
+  @Expose()
+  @IsString({ message: 'Matrícula deve ser uma string' })
+  @IsNotEmpty({ message: 'Matrícula é obrigatória' })
+  @Matches(/^\d+$/, { message: 'Matrícula deve conter apenas números' })
+  matricula: string;
+
+  @ApiPropertyOptional({
+    example: 'REGULAR',
+    enum: UserSituation,
+    description: 'Situação acadêmica do usuário (padrão: REGULAR)',
+  })
+  @Expose()
+  @IsOptional()
+  @IsEnum(UserSituation, {
+    message: 'Situação inválida. Use: REGULAR, FORMANDO ou FORMADO',
+  })
+  situation?: UserSituation;
 }

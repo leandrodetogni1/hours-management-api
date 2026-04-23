@@ -4,6 +4,7 @@ import { ActivitiesService } from '../../activities/services/activities.service'
 import { CreateUserDto } from '../dto/CreateUserDto';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { ActivityResponseDto } from '../../activities/dto/ActivityResponseDto';
+import { UserSituation } from '../../enums/UserSituation';
 
 @Injectable()
 export class UsersService {
@@ -12,8 +13,8 @@ export class UsersService {
     private activitiesService: ActivitiesService,
   ) {}
 
-  getAllUsers(): Promise<UserResponseDto[]> {
-    return this.usersRepository.getAll();
+  getAllUsers(situation?: UserSituation): Promise<UserResponseDto[]> {
+    return this.usersRepository.getAll(situation);
   }
 
   async getUserById(id: string): Promise<UserResponseDto> {
