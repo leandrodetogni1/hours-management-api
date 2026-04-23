@@ -60,6 +60,7 @@ export class ActivitiesRepository {
   }
 
   async createActivity(
+    authorId: string,
     dto: CreateActivityDto,
   ): Promise<CreateActivityResponseDto> {
     const activityType = await this.prisma.activity_types.findUnique({
@@ -73,16 +74,16 @@ export class ActivitiesRepository {
     }
 
     const author = await this.prisma.users.findUnique({
-      where: { id: dto.authorId },
+      where: { id: authorId },
     });
 
     if (!author) {
-      throw new NotFoundException(`User with id ${dto.authorId} not found`);
+      throw new NotFoundException(`User with id ${authorId} not found`);
     }
 
     const activity = await this.prisma.activities.create({
       data: {
-        authorId: dto.authorId,
+        authorId,
         activityTypeId: dto.activityTypeId,
         category: activityType.category,
         unity: activityType.unity,

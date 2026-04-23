@@ -77,6 +77,7 @@ model users {
   id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firstName  String       @map("firstname") @db.VarChar(255)
   lastName   String       @map("lastname") @db.VarChar(255)
+  picture    String?      @db.VarChar(500)
   roleId     String       @map("roleid") @db.Uuid
   role       roles        @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   createdAt  DateTime?    @map("createdat") @default(now()) @db.Timestamp(6)

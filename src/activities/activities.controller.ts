@@ -9,7 +9,13 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+} from '@nestjs/swagger';
 import { ActivitiesService } from './services/activities.service.js';
 import { CreateActivityDto } from './dto/CreateActivityDto.js';
 import {
@@ -18,45 +24,59 @@ import {
   UpdateActivityStatusResponseDto,
 } from './dto/ActivityResponseDto.js';
 import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
 
 @ApiTags('Activities')
+@ApiBearerAuth()
 @Controller('activities')
 export class ActivitiesController {
   constructor(private activitiesService: ActivitiesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar atividades (filtro opcional por userId)' })
+  @ApiOperation({ summary: 'Listar atividades (filtro opcional por authorId)' })
   @ApiResponse({
     status: 200,
     description: 'Lista de atividades',
     type: [ActivityResponseDto],
   })
-  findAll(@Query() query: GetActivitiesQueryDto): Promise<ActivityResponseDto[]> {
+  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
+  findAll(
+    @Query() query: GetActivitiesQueryDto,
+  ): Promise<ActivityResponseDto[]> {
     return this.activitiesService.getAllActivities(query.authorId);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Criar uma nova atividade' })
+  @ApiOperation({
+    summary:
+      'Criar uma nova atividade (authorId é derivado do JWT, body não precisa enviar)',
+  })
   @ApiResponse({
     status: 201,
     description: 'Atividade criada',
     type: CreateActivityResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
   @ApiResponse({
     status: 404,
     description: 'Autor ou tipo de atividade não encontrado',
   })
   createActivity(
+    @CurrentUser() user: JwtUserPayload,
     @Body() body: CreateActivityDto,
   ): Promise<CreateActivityResponseDto> {
-    return this.activitiesService.createActivity(body);
+    return this.activitiesService.createActivity(user.sub, body);
   }
 
+  @Roles('admin', 'coordinator')
   @Patch(':id/approve')
   @ApiOperation({
-    summary: 'Aprovar uma atividade (a partir de PENDING ou VERIFIED)',
+    summary:
+      'Aprovar uma atividade (a partir de PENDING ou VERIFIED) — admin/coordinator',
   })
   @ApiParam({ name: 'id', description: 'UUID da atividade' })
   @ApiResponse({
@@ -65,6 +85,11 @@ export class ActivitiesController {
     type: UpdateActivityStatusResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
+  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
+  @ApiResponse({
+    status: 403,
+    description: 'Perfil sem permissão (admin ou coordinator)',
+  })
   @ApiResponse({
     status: 400,
     description:
@@ -76,9 +101,11 @@ export class ActivitiesController {
     return this.activitiesService.approveActivity(id);
   }
 
+  @Roles('admin', 'coordinator')
   @Patch(':id/reject')
   @ApiOperation({
-    summary: 'Rejeitar uma atividade (a partir de PENDING ou VERIFIED)',
+    summary:
+      'Rejeitar uma atividade (a partir de PENDING ou VERIFIED) — admin/coordinator',
   })
   @ApiParam({ name: 'id', description: 'UUID da atividade' })
   @ApiResponse({
@@ -87,6 +114,11 @@ export class ActivitiesController {
     type: UpdateActivityStatusResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
+  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
+  @ApiResponse({
+    status: 403,
+    description: 'Perfil sem permissão (admin ou coordinator)',
+  })
   @ApiResponse({
     status: 400,
     description:
@@ -98,9 +130,11 @@ export class ActivitiesController {
     return this.activitiesService.rejectActivity(id);
   }
 
+  @Roles('admin', 'coordinator')
   @Patch(':id/verify')
   @ApiOperation({
-    summary: 'Verificar uma atividade (a partir de PENDING)',
+    summary:
+      'Verificar uma atividade (a partir de PENDING) — admin/coordinator',
   })
   @ApiParam({ name: 'id', description: 'UUID da atividade' })
   @ApiResponse({
@@ -109,6 +143,11 @@ export class ActivitiesController {
     type: UpdateActivityStatusResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
+  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
+  @ApiResponse({
+    status: 403,
+    description: 'Perfil sem permissão (admin ou coordinator)',
+  })
   @ApiResponse({
     status: 400,
     description:

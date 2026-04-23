@@ -24,9 +24,10 @@ export class ActivitiesService {
   }
 
   createActivity(
+    authorId: string,
     activity: CreateActivityDto,
   ): Promise<CreateActivityResponseDto> {
-    return this.activityRepository.createActivity(activity);
+    return this.activityRepository.createActivity(authorId, activity);
   }
 
   approveActivity(id: string): Promise<UpdateActivityStatusResponseDto> {

@@ -14,6 +14,16 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
+  // CORS restrito ao frontend (permite cookies httpOnly / Authorization header)
+  const frontendUrl =
+    configService.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
+  app.enableCors({
+    origin: frontendUrl,
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
   // Swagger basic auth
   const swaggerUser = configService.get<string>('SWAGGER_USER', 'admin');
   const swaggerPassword = configService.get<string>(
@@ -36,6 +46,15 @@ async function bootstrap() {
       'API para gerenciamento de horas complementares - UFPel TCC',
     )
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'JWT emitido por POST /auth/google',
+      },
+      'bearer',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
