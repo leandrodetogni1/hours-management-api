@@ -2,20 +2,13 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
   HttpStatus,
   Param,
   Patch,
   Post,
   Query,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ActivitiesService } from './services/activities.service.js';
 import { CreateActivityDto } from './dto/CreateActivityDto.js';
 import {
@@ -24,9 +17,12 @@ import {
   UpdateActivityStatusResponseDto,
 } from './dto/ActivityResponseDto.js';
 import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
-import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
+import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
+
+const ID_PARAM = { name: 'id', description: 'UUID da atividade' };
+const REVIEWER_ROLES = ['admin', 'reviewer'];
 
 @ApiTags('Activities')
 @ApiBearerAuth()
@@ -35,13 +31,12 @@ export class ActivitiesController {
   constructor(private activitiesService: ActivitiesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar atividades (filtro opcional por authorId)' })
-  @ApiResponse({
-    status: 200,
+  @ApiEndpoint({
+    summary: 'Listar atividades (filtro opcional por authorId)',
     description: 'Lista de atividades',
-    type: [ActivityResponseDto],
+    type: ActivityResponseDto,
+    isArray: true,
   })
-  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
   findAll(
     @Query() query: GetActivitiesQueryDto,
   ): Promise<ActivityResponseDto[]> {
@@ -49,21 +44,16 @@ export class ActivitiesController {
   }
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
+  @ApiEndpoint({
     summary:
       'Criar uma nova atividade (authorId é derivado do JWT, body não precisa enviar)',
-  })
-  @ApiResponse({
-    status: 201,
+    status: HttpStatus.CREATED,
     description: 'Atividade criada',
     type: CreateActivityResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
-  @ApiResponse({
-    status: 404,
-    description: 'Autor ou tipo de atividade não encontrado',
+    hasBody: true,
+    errors: [
+      { status: 404, description: 'Autor ou tipo de atividade não encontrado' },
+    ],
   })
   createActivity(
     @CurrentUser() user: JwtUserPayload,
@@ -72,28 +62,21 @@ export class ActivitiesController {
     return this.activitiesService.createActivity(user.sub, body);
   }
 
-  @Roles('admin', 'reviewer')
   @Patch(':id/approve')
-  @ApiOperation({
+  @ApiEndpoint({
     summary:
       'Aprovar uma atividade (a partir de PENDING ou VERIFIED) — admin/reviewer',
-  })
-  @ApiParam({ name: 'id', description: 'UUID da atividade' })
-  @ApiResponse({
-    status: 200,
     description: 'Atividade aprovada',
     type: UpdateActivityStatusResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
-  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
-  @ApiResponse({
-    status: 403,
-    description: 'Perfil sem permissão (admin ou reviewer)',
-  })
-  @ApiResponse({
-    status: 400,
-    description:
-      'Transição de status inválida (só é permitido aprovar atividades PENDING ou VERIFIED)',
+    params: [ID_PARAM],
+    roles: REVIEWER_ROLES,
+    errors: [
+      {
+        status: 400,
+        description:
+          'Transição de status inválida (só é permitido aprovar atividades PENDING ou VERIFIED)',
+      },
+    ],
   })
   approveActivity(
     @Param('id') id: string,
@@ -101,28 +84,21 @@ export class ActivitiesController {
     return this.activitiesService.approveActivity(id);
   }
 
-  @Roles('admin', 'reviewer')
   @Patch(':id/reject')
-  @ApiOperation({
+  @ApiEndpoint({
     summary:
       'Rejeitar uma atividade (a partir de PENDING ou VERIFIED) — admin/reviewer',
-  })
-  @ApiParam({ name: 'id', description: 'UUID da atividade' })
-  @ApiResponse({
-    status: 200,
     description: 'Atividade rejeitada',
     type: UpdateActivityStatusResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
-  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
-  @ApiResponse({
-    status: 403,
-    description: 'Perfil sem permissão (admin ou reviewer)',
-  })
-  @ApiResponse({
-    status: 400,
-    description:
-      'Transição de status inválida (só é permitido rejeitar atividades PENDING ou VERIFIED)',
+    params: [ID_PARAM],
+    roles: REVIEWER_ROLES,
+    errors: [
+      {
+        status: 400,
+        description:
+          'Transição de status inválida (só é permitido rejeitar atividades PENDING ou VERIFIED)',
+      },
+    ],
   })
   rejectActivity(
     @Param('id') id: string,
@@ -130,28 +106,20 @@ export class ActivitiesController {
     return this.activitiesService.rejectActivity(id);
   }
 
-  @Roles('admin', 'reviewer')
   @Patch(':id/verify')
-  @ApiOperation({
-    summary:
-      'Verificar uma atividade (a partir de PENDING) — admin/reviewer',
-  })
-  @ApiParam({ name: 'id', description: 'UUID da atividade' })
-  @ApiResponse({
-    status: 200,
+  @ApiEndpoint({
+    summary: 'Verificar uma atividade (a partir de PENDING) — admin/reviewer',
     description: 'Atividade verificada',
     type: UpdateActivityStatusResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Atividade não encontrada' })
-  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
-  @ApiResponse({
-    status: 403,
-    description: 'Perfil sem permissão (admin ou reviewer)',
-  })
-  @ApiResponse({
-    status: 400,
-    description:
-      'Transição de status inválida (só é permitido verificar atividades PENDING)',
+    params: [ID_PARAM],
+    roles: REVIEWER_ROLES,
+    errors: [
+      {
+        status: 400,
+        description:
+          'Transição de status inválida (só é permitido verificar atividades PENDING)',
+      },
+    ],
   })
   verifyActivity(
     @Param('id') id: string,

@@ -22,7 +22,8 @@ export class UsersRepository {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       (error.meta as Record<string, unknown>)?.driverAdapterError ?? '',
     );
-    const isMatricula = target.includes('matricula') || cause.includes('matricula');
+    const isMatricula =
+      target.includes('matricula') || cause.includes('matricula');
     throw new ConflictException(
       isMatricula ? 'Matrícula já cadastrada' : 'Email já cadastrado',
     );

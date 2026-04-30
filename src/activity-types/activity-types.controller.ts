@@ -3,19 +3,12 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
   HttpStatus,
   Param,
   Patch,
   Post,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ActivityTypesService } from './services/activity-types.service.js';
 import {
   ActivityTypeResponseDto,
@@ -24,7 +17,10 @@ import {
 } from './dto/ActivityTypeResponseDto.js';
 import { CreateActivityTypeDto } from './dto/CreateActivityTypeDto.js';
 import { UpdateActivityTypeDto } from './dto/UpdateActivityTypeDto.js';
-import { Roles } from '../auth/decorators/roles.decorator.js';
+import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
+
+const ID_PARAM = { name: 'id', description: 'UUID do tipo de atividade' };
+const ADMIN_ROLES = ['admin'];
 
 @ApiTags('Activity Types')
 @ApiBearerAuth()
@@ -33,45 +29,35 @@ export class ActivityTypesController {
   constructor(private activityTypesService: ActivityTypesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar todos os tipos de atividade' })
-  @ApiResponse({
-    status: 200,
+  @ApiEndpoint({
+    summary: 'Listar todos os tipos de atividade',
     description: 'Lista de tipos de atividade',
-    type: [ActivityTypeResponseDto],
+    type: ActivityTypeResponseDto,
+    isArray: true,
   })
-  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
   findAll(): Promise<ActivityTypeResponseDto[]> {
     return this.activityTypesService.getAllActivityTypes();
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Buscar tipo de atividade por ID' })
-  @ApiParam({ name: 'id', description: 'UUID do tipo de atividade' })
-  @ApiResponse({
-    status: 200,
+  @ApiEndpoint({
+    summary: 'Buscar tipo de atividade por ID',
     description: 'Tipo de atividade encontrado',
     type: ActivityTypeResponseDto,
+    params: [ID_PARAM],
   })
-  @ApiResponse({ status: 404, description: 'Tipo de atividade não encontrado' })
-  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
   findById(@Param('id') id: string): Promise<ActivityTypeResponseDto> {
     return this.activityTypesService.getActivityTypeById(id);
   }
 
-  @Roles('admin')
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Criar um novo tipo de atividade (admin)' })
-  @ApiResponse({
-    status: 201,
+  @ApiEndpoint({
+    summary: 'Criar um novo tipo de atividade (admin)',
+    status: HttpStatus.CREATED,
     description: 'Tipo de atividade criado',
     type: CreateActivityTypeResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
-  @ApiResponse({
-    status: 403,
-    description: 'Perfil sem permissão (apenas admin)',
+    roles: ADMIN_ROLES,
+    hasBody: true,
   })
   create(
     @Body() body: CreateActivityTypeDto,
@@ -79,21 +65,14 @@ export class ActivityTypesController {
     return this.activityTypesService.createActivityType(body);
   }
 
-  @Roles('admin')
   @Patch(':id')
-  @ApiOperation({ summary: 'Atualizar tipo de atividade (admin)' })
-  @ApiParam({ name: 'id', description: 'UUID do tipo de atividade' })
-  @ApiResponse({
-    status: 200,
+  @ApiEndpoint({
+    summary: 'Atualizar tipo de atividade (admin)',
     description: 'Tipo de atividade atualizado',
     type: UpdateActivityTypeResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Tipo de atividade não encontrado' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
-  @ApiResponse({
-    status: 403,
-    description: 'Perfil sem permissão (apenas admin)',
+    params: [ID_PARAM],
+    roles: ADMIN_ROLES,
+    hasBody: true,
   })
   update(
     @Param('id') id: string,
@@ -102,17 +81,13 @@ export class ActivityTypesController {
     return this.activityTypesService.updateActivityType(id, body);
   }
 
-  @Roles('admin')
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Deletar tipo de atividade (admin)' })
-  @ApiParam({ name: 'id', description: 'UUID do tipo de atividade' })
-  @ApiResponse({ status: 204, description: 'Tipo de atividade deletado' })
-  @ApiResponse({ status: 404, description: 'Tipo de atividade não encontrado' })
-  @ApiResponse({ status: 401, description: 'JWT ausente ou inválido' })
-  @ApiResponse({
-    status: 403,
-    description: 'Perfil sem permissão (apenas admin)',
+  @ApiEndpoint({
+    summary: 'Deletar tipo de atividade (admin)',
+    status: HttpStatus.NO_CONTENT,
+    description: 'Tipo de atividade deletado',
+    params: [ID_PARAM],
+    roles: ADMIN_ROLES,
   })
   async delete(@Param('id') id: string): Promise<void> {
     await this.activityTypesService.deleteActivityType(id);
