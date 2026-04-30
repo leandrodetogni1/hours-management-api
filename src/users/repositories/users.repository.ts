@@ -16,6 +16,18 @@ import { UserSituation } from '../../enums/UserSituation';
 export class UsersRepository {
   constructor(private prisma: PrismaService) {}
 
+  private throwP2002(error: Prisma.PrismaClientKnownRequestError): never {
+    const target = (error.meta?.target as string[] | undefined) ?? [];
+    const cause = String(
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      (error.meta as Record<string, unknown>)?.driverAdapterError ?? '',
+    );
+    const isMatricula = target.includes('matricula') || cause.includes('matricula');
+    throw new ConflictException(
+      isMatricula ? 'Matrícula já cadastrada' : 'Email já cadastrado',
+    );
+  }
+
   async getAll(situation?: UserSituation): Promise<UserResponseDto[]> {
     const users = await this.prisma.users.findMany({
       where: situation ? { situation } : undefined,
@@ -65,10 +77,11 @@ export class UsersRepository {
         }),
       };
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          throw new ConflictException('Email already exists');
-        }
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        this.throwP2002(error);
       }
       throw new Error(`Failed to create user: ${error}`);
     }
@@ -80,20 +93,39 @@ export class UsersRepository {
       throw new NotFoundException(`User with id ${id} not found`);
     }
 
-    const updated = await this.prisma.users.update({
-      where: { id },
-      data: {
-        ...(data.firstName !== undefined && { firstName: data.firstName }),
-        ...(data.lastName !== undefined && { lastName: data.lastName }),
-        ...(data.matricula !== undefined && { matricula: data.matricula }),
-        ...(data.situation !== undefined && { situation: data.situation }),
-        ...(data.course !== undefined && { course: data.course }),
-        updatedAt: new Date(),
-      },
-      include: { role: true },
-    });
+    if (data.matricula !== undefined) {
+      const conflict = await this.prisma.users.findUnique({
+        where: { matricula: data.matricula },
+      });
+      if (conflict && conflict.id !== id) {
+        throw new ConflictException('Matrícula já cadastrada');
+      }
+    }
 
-    return UserMapper.toResponseDto(updated);
+    try {
+      const updated = await this.prisma.users.update({
+        where: { id },
+        data: {
+          ...(data.firstName !== undefined && { firstName: data.firstName }),
+          ...(data.lastName !== undefined && { lastName: data.lastName }),
+          ...(data.matricula !== undefined && { matricula: data.matricula }),
+          ...(data.situation !== undefined && { situation: data.situation }),
+          ...(data.course !== undefined && { course: data.course }),
+          updatedAt: new Date(),
+        },
+        include: { role: true },
+      });
+
+      return UserMapper.toResponseDto(updated);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        this.throwP2002(error);
+      }
+      throw error;
+    }
   }
 
   async deleteUser(id: string): Promise<void> {

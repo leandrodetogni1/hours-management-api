@@ -5,21 +5,31 @@ import { UserCourse } from '../../enums/UserCourse.js';
 import { UserSituation } from '../../enums/UserSituation.js';
 
 export class UpdateUserDto {
-  @ApiPropertyOptional({ example: 'João', description: 'Primeiro nome do usuário' })
+  @ApiPropertyOptional({
+    example: 'João',
+    description: 'Primeiro nome do usuário',
+  })
   @Expose()
   @IsOptional()
   @IsString({ message: 'Nome deve ser uma string' })
-  @Transform(
-    ({ value }) => value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : value,
+  @Transform(({ value }) =>
+    value
+      ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+      : value,
   )
   firstName?: string;
 
-  @ApiPropertyOptional({ example: 'Silva', description: 'Sobrenome do usuário' })
+  @ApiPropertyOptional({
+    example: 'Silva',
+    description: 'Sobrenome do usuário',
+  })
   @Expose()
   @IsOptional()
   @IsString({ message: 'Sobrenome deve ser uma string' })
-  @Transform(
-    ({ value }) => value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : value,
+  @Transform(({ value }) =>
+    value
+      ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+      : value,
   )
   lastName?: string;
 
@@ -29,7 +39,9 @@ export class UpdateUserDto {
   })
   @Expose()
   @IsOptional()
-  @Transform(({ value }) => (value !== undefined && value !== null ? String(value) : value))
+  @Transform(({ value }) =>
+    value !== undefined && value !== null ? String(value) : value,
+  )
   @IsString({ message: 'Matrícula deve ser uma string' })
   @Matches(/^\d+$/, { message: 'Matrícula deve conter apenas números' })
   matricula?: string;
@@ -37,13 +49,15 @@ export class UpdateUserDto {
   @ApiPropertyOptional({
     example: 'REGULAR',
     enum: UserSituation,
-    description: 'Situação acadêmica do usuário',
+    description: 'Situação acadêmica do usuário (padrão: REGULAR)',
+    default: UserSituation.REGULAR,
   })
   @Expose()
   @IsOptional()
   @IsEnum(UserSituation, {
     message: 'Situação inválida. Use: REGULAR, FORMANDO ou FORMADO',
   })
+  @Transform(({ value }) => value ?? UserSituation.REGULAR)
   situation?: UserSituation;
 
   @ApiPropertyOptional({

@@ -88,7 +88,7 @@ model users {
   createdAt  DateTime?    @map("createdat") @default(now()) @db.Timestamp(6)
   updatedAt  DateTime?    @map("updatedat") @default(now()) @db.Timestamp(6)
   email      String         @unique @db.VarChar(255)
-  matricula  String?        @db.VarChar(20)
+  matricula  String?        @unique @db.VarChar(20)
   situation  UserSituation?
   course     Course?
   activities activities[]
