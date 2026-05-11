@@ -76,7 +76,7 @@ export class UsersController {
   @Patch(':id')
   @ApiEndpoint({
     summary:
-      'Atualizar dados do usuário — próprio usuário (apenas nome) ou owner/admin (qualquer campo)',
+      'Atualizar dados do usuário — próprio usuário (nome, curso, currículo, situação) ou owner/admin (qualquer campo, inclusive matrícula)',
     description: 'Usuário atualizado',
     type: UserResponseDto,
     params: [ID_PARAM],

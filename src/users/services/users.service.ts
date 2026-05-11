@@ -15,7 +15,13 @@ import { JwtUserPayload } from '../../auth/decorators/current-user.decorator';
 import { Status } from '@prisma/client';
 
 const PRIVILEGED_UPDATE_ROLES = ['owner', 'admin'] as const;
-const SELF_EDITABLE_FIELDS = ['firstName', 'lastName'] as const;
+const SELF_EDITABLE_FIELDS = [
+  'firstName',
+  'lastName',
+  'course',
+  'curriculumYear',
+  'situation',
+] as const;
 
 @Injectable()
 export class UsersService {
