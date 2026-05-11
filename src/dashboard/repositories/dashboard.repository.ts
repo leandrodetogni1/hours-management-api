@@ -59,7 +59,10 @@ export class DashboardRepository {
     situations: UserSituation[],
   ): Promise<StudentWithActivities[]> {
     const students = await this.prisma.users.findMany({
-      where: { situation: { in: situations } },
+      where: {
+        situation: { in: situations },
+        role: { name: 'member' },
+      },
       select: {
         id: true,
         firstName: true,
@@ -145,7 +148,10 @@ export class DashboardRepository {
     ] = await Promise.all([
       this.prisma.users.count(),
       this.prisma.users.count({
-        where: { situation: UserSituation.FORMANDO },
+        where: {
+          situation: UserSituation.FORMANDO,
+          role: { name: 'member' },
+        },
       }),
       this.prisma.activities.count({
         where: {
