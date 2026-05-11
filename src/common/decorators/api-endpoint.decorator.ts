@@ -7,6 +7,10 @@ import {
 } from '@nestjs/swagger';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { Public } from '../../auth/decorators/public.decorator.js';
+import {
+  SelfOrRoles,
+  SelfOrRolesOptions,
+} from '../../auth/decorators/self-or-roles.decorator.js';
 
 interface ApiParamOptions {
   name: string;
@@ -22,6 +26,7 @@ interface ApiEndpointOptions {
   params?: ApiParamOptions[];
   errors?: ApiResponseOptions[];
   roles?: string[];
+  selfOrRoles?: SelfOrRolesOptions;
   isPublic?: boolean;
   hasBody?: boolean;
   hasParams?: boolean;
@@ -43,10 +48,17 @@ export const ApiEndpoint = (options: ApiEndpointOptions) => {
     params = [],
     errors = [],
     roles,
+    selfOrRoles,
     isPublic = false,
     hasBody = false,
     hasParams = params.length > 0,
   } = options;
+
+  if (roles && selfOrRoles) {
+    throw new Error(
+      'ApiEndpoint: use either "roles" or "selfOrRoles", not both',
+    );
+  }
 
   const overriddenStatuses = new Set(errors.map((e) => e.status));
 
@@ -80,6 +92,19 @@ export const ApiEndpoint = (options: ApiEndpointOptions) => {
         ApiResponse({
           status: 403,
           description: `Perfil sem permissão (apenas ${rolesList})`,
+        }) as MethodDecorator,
+      );
+    }
+  }
+
+  if (selfOrRoles) {
+    decorators.push(SelfOrRoles(selfOrRoles));
+    if (!overriddenStatuses.has(403)) {
+      const rolesList = selfOrRoles.roles.join(' ou ');
+      decorators.push(
+        ApiResponse({
+          status: 403,
+          description: `Acesso negado (apenas o próprio usuário ou ${rolesList})`,
         }) as MethodDecorator,
       );
     }

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UsersRepository } from '../repositories/users.repository';
 import { ActivitiesService } from '../../activities/services/activities.service';
 import { CreateUserDto } from '../dto/CreateUserDto';
@@ -6,7 +10,12 @@ import { UpdateUserDto } from '../dto/UpdateUserDto';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { ActivityResponseDto } from '../../activities/dto/ActivityResponseDto';
 import { UserSituation } from '../../enums/UserSituation';
+import { FilterableRole } from '../dto/GetUsersQueryDto';
+import { JwtUserPayload } from '../../auth/decorators/current-user.decorator';
 import { Status } from '@prisma/client';
+
+const PRIVILEGED_UPDATE_ROLES = ['owner', 'admin'] as const;
+const SELF_EDITABLE_FIELDS = ['firstName', 'lastName'] as const;
 
 @Injectable()
 export class UsersService {
@@ -15,8 +24,11 @@ export class UsersService {
     private activitiesService: ActivitiesService,
   ) {}
 
-  getAllUsers(situation?: UserSituation): Promise<UserResponseDto[]> {
-    return this.usersRepository.getAll(situation);
+  getAllUsers(
+    situation?: UserSituation,
+    role?: FilterableRole,
+  ): Promise<UserResponseDto[]> {
+    return this.usersRepository.getAll(situation, role);
   }
 
   async getUserById(id: string): Promise<UserResponseDto> {
@@ -31,7 +43,33 @@ export class UsersService {
     return this.usersRepository.createUser(user);
   }
 
-  updateUser(id: string, data: UpdateUserDto): Promise<UserResponseDto> {
+  updateUser(
+    id: string,
+    data: UpdateUserDto,
+    currentUser: JwtUserPayload,
+  ): Promise<UserResponseDto> {
+    const isPrivileged =
+      typeof currentUser.role === 'string' &&
+      (PRIVILEGED_UPDATE_ROLES as readonly string[]).includes(currentUser.role);
+
+    if (!isPrivileged) {
+      if (currentUser.sub !== id) {
+        throw new ForbiddenException(
+          'Apenas o próprio usuário ou owner/admin podem atualizar este registro',
+        );
+      }
+      const disallowed = Object.keys(data).filter(
+        (key) =>
+          data[key as keyof UpdateUserDto] !== undefined &&
+          !(SELF_EDITABLE_FIELDS as readonly string[]).includes(key),
+      );
+      if (disallowed.length > 0) {
+        throw new ForbiddenException(
+          `Apenas owner/admin podem alterar: ${disallowed.join(', ')}`,
+        );
+      }
+    }
+
     return this.usersRepository.updateUser(id, data);
   }
 

@@ -42,9 +42,20 @@ enum Course {
 }
 
 model roles {
-  id    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name  String  @unique @db.VarChar(50)
-  users users[]
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String        @unique @db.VarChar(50)
+  users       users[]
+  invitations invitations[]
+}
+
+model invitations {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique @db.VarChar(255)
+  roleId    String   @map("roleid") @db.Uuid
+  role      roles    @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdBy String?  @map("createdby") @db.Uuid
+  inviter   users?   @relation("InvitationInviter", fields: [createdBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdAt DateTime @default(now()) @map("createdat") @db.Timestamp(6)
 }
 
 model activities {
@@ -105,4 +116,5 @@ model users {
   situation  UserSituation?
   course     Course?
   activities activities[]
+  invitationsCreated invitations[] @relation("InvitationInviter")
 }

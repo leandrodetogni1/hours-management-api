@@ -11,6 +11,7 @@ import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { UserMapper } from '../mappers/user.mapper';
 import { UserCourse } from '../../enums/UserCourse';
 import { UserSituation } from '../../enums/UserSituation';
+import { FilterableRole } from '../dto/GetUsersQueryDto';
 
 @Injectable()
 export class UsersRepository {
@@ -29,9 +30,16 @@ export class UsersRepository {
     );
   }
 
-  async getAll(situation?: UserSituation): Promise<UserResponseDto[]> {
+  async getAll(
+    situation?: UserSituation,
+    role?: FilterableRole,
+  ): Promise<UserResponseDto[]> {
+    const where: Prisma.usersWhereInput = {
+      ...(situation && { situation }),
+      ...(role && { role: { name: role } }),
+    };
     const users = await this.prisma.users.findMany({
-      where: situation ? { situation } : undefined,
+      where,
       include: { role: true },
     });
     return users.map((user) => UserMapper.toResponseDto(user));

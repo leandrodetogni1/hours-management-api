@@ -7,10 +7,12 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { ActivityTypesModule } from './activity-types/activity-types.module';
+import { InvitationsModule } from './invitations/invitations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
+import { SelfOrRolesGuard } from './auth/guards/self-or-roles.guard';
 
 @Module({
   imports: [
@@ -27,6 +29,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     UsersModule,
     ActivitiesModule,
     ActivityTypesModule,
+    InvitationsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -34,6 +37,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: SelfOrRolesGuard },
   ],
 })
 export class AppModule {}

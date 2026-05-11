@@ -22,6 +22,8 @@ import { ActivityResponseDto } from '../activities/dto/ActivityResponseDto.js';
 import { GetMyActivitiesQueryDto } from '../activities/dto/GetMyActivitiesQueryDto.js';
 import { GetUsersQueryDto } from './dto/GetUsersQueryDto.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
 
 const ID_PARAM = { name: 'id', description: 'UUID do usuário' };
 const ADMIN_ROLES = ['admin'];
@@ -35,21 +37,24 @@ export class UsersController {
 
   @Get()
   @ApiEndpoint({
-    summary: 'Listar todos os usuários',
+    summary:
+      'Listar todos os usuários — owner/admin/reviewer apenas (filtros opcionais por situação e role)',
     description: 'Lista de usuários',
     type: UserResponseDto,
     isArray: true,
+    roles: PRIVILEGED_ROLES,
   })
   findAll(@Query() query: GetUsersQueryDto): Promise<UserResponseDto[]> {
-    return this.usersService.getAllUsers(query.situation);
+    return this.usersService.getAllUsers(query.situation, query.role);
   }
 
   @Get(':id')
   @ApiEndpoint({
-    summary: 'Buscar usuário por ID',
+    summary: 'Buscar usuário por ID — próprio usuário ou owner/admin/reviewer',
     description: 'Usuário encontrado',
     type: UserResponseDto,
     params: [ID_PARAM],
+    selfOrRoles: { roles: PRIVILEGED_ROLES, param: 'id' },
   })
   findById(@Param('id') id: string): Promise<UserResponseDto> {
     return this.usersService.getUserById(id);
@@ -70,17 +75,20 @@ export class UsersController {
 
   @Patch(':id')
   @ApiEndpoint({
-    summary: 'Atualizar dados do usuário',
+    summary:
+      'Atualizar dados do usuário — próprio usuário (apenas nome) ou owner/admin (qualquer campo)',
     description: 'Usuário atualizado',
     type: UserResponseDto,
     params: [ID_PARAM],
     hasBody: true,
+    selfOrRoles: { roles: ['owner', 'admin'], param: 'id' },
   })
   updateUser(
     @Param('id') id: string,
     @Body() body: UpdateUserDto,
+    @CurrentUser() currentUser: JwtUserPayload,
   ): Promise<UserResponseDto> {
-    return this.usersService.updateUser(id, body);
+    return this.usersService.updateUser(id, body, currentUser);
   }
 
   @Get(':userId/activities')

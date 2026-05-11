@@ -113,8 +113,10 @@ export class AuthService implements OnModuleInit {
     lastName: string;
     picture: string | null;
   }): Promise<UserResponseDto> {
+    const normalizedEmail = input.email.trim().toLowerCase();
+
     const existing = await this.prisma.users.findUnique({
-      where: { email: input.email },
+      where: { email: normalizedEmail },
       include: { role: true },
     });
 
@@ -132,25 +134,45 @@ export class AuthService implements OnModuleInit {
       return UserMapper.toResponseDto(updated);
     }
 
-    const defaultRole = await this.prisma.roles.findUnique({
-      where: { name: DEFAULT_ROLE_NAME },
+    const invitation = await this.prisma.invitations.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, roleId: true },
     });
-    if (!defaultRole) {
-      throw new InternalServerErrorException(
-        `Default role "${DEFAULT_ROLE_NAME}" not seeded. Run migrations.`,
-      );
+
+    let assignedRoleId: string;
+    if (invitation) {
+      assignedRoleId = invitation.roleId;
+    } else {
+      const defaultRole = await this.prisma.roles.findUnique({
+        where: { name: DEFAULT_ROLE_NAME },
+      });
+      if (!defaultRole) {
+        throw new InternalServerErrorException(
+          `Default role "${DEFAULT_ROLE_NAME}" not seeded. Run migrations.`,
+        );
+      }
+      assignedRoleId = defaultRole.id;
     }
 
-    const created = await this.prisma.users.create({
-      data: {
-        email: input.email,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        picture: input.picture,
-        role: { connect: { id: defaultRole.id } },
-      },
-      include: { role: true },
+    const created = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.users.create({
+        data: {
+          email: normalizedEmail,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          picture: input.picture,
+          role: { connect: { id: assignedRoleId } },
+        },
+        include: { role: true },
+      });
+
+      if (invitation) {
+        await tx.invitations.delete({ where: { id: invitation.id } });
+      }
+
+      return user;
     });
+
     return UserMapper.toResponseDto({
       ...created,
       situation: created.situation as UserSituation | null,
