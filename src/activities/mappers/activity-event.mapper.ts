@@ -9,6 +9,12 @@ export class ActivityEventMapper {
     actorId: string;
     comment: string | null;
     createdAt: Date;
+    actor?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    } | null;
   }): ActivityEventResponseDto {
     return {
       id: event.id,
@@ -16,6 +22,7 @@ export class ActivityEventMapper {
       fromStatus: event.fromStatus,
       toStatus: event.toStatus,
       actorId: event.actorId,
+      actor: event.actor ?? null,
       comment: event.comment,
       createdAt: event.createdAt.toISOString(),
     };

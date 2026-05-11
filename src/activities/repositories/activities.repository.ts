@@ -412,6 +412,16 @@ export class ActivitiesRepository {
     const events = await this.prisma.activity_events.findMany({
       where: { activityId },
       orderBy: { createdAt: 'asc' },
+      include: {
+        actor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
     });
 
     return events.map((e) => ActivityEventMapper.toResponseDto(e));

@@ -1,5 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class ActivityEventActorDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  id: string;
+
+  @ApiProperty({ example: 'João' })
+  firstName: string;
+
+  @ApiProperty({ example: 'Silva' })
+  lastName: string;
+
+  @ApiProperty({ example: 'joao@ufpel.edu.br' })
+  email: string;
+}
+
 export class ActivityEventResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   id: string;
@@ -22,6 +36,13 @@ export class ActivityEventResponseDto {
       'ID do usuário responsável pela transição (autor na criação; reviewer/admin nas demais)',
   })
   actorId: string;
+
+  @ApiPropertyOptional({
+    type: ActivityEventActorDto,
+    description:
+      'Dados resumidos do autor da transição (embed para evitar fetch extra no front)',
+  })
+  actor: ActivityEventActorDto | null;
 
   @ApiPropertyOptional({ example: 'Certificado ilegível' })
   comment: string | null;
