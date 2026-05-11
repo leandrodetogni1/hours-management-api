@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { ActivityTypesModule } from './activity-types/activity-types.module';
 import { InvitationsModule } from './invitations/invitations.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -30,6 +31,7 @@ import { SelfOrRolesGuard } from './auth/guards/self-or-roles.guard';
     ActivitiesModule,
     ActivityTypesModule,
     InvitationsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

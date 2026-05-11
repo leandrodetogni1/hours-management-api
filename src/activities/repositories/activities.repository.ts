@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { ActivityClass, Category, Prisma, Status } from '@prisma/client';
+import { Prisma, Status } from '@prisma/client';
 import {
   ActivityResponseDto,
   CreateActivityResponseDto,
@@ -14,16 +14,9 @@ import {
 import { ActivityMapper } from '../mappers/activity.mapper';
 import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
 import { ActivityEventMapper } from '../mappers/activity-event.mapper';
-import {
-  ActivitySummaryResponseDto,
-  CappedTypeWarningDto,
-  CategoryProgressDto,
-} from '../dto/ActivitySummaryResponseDto';
+import { ActivitySummaryResponseDto } from '../dto/ActivitySummaryResponseDto';
 import { calculateHoursEquivalent } from '../domain/hours-calculator.js';
-import {
-  CURRICULUM_RULES,
-  resolveMaxHoursTotal,
-} from '../domain/curriculum-rules.js';
+import { calculateActivityProgress } from '../domain/progress-calculator.js';
 
 const allowedSourceStatuses: Record<Status, Status[]> = {
   [Status.PENDING]: [],
@@ -236,167 +229,43 @@ export class ActivitiesRepository {
       },
     });
 
-    const round2 = (n: number) => Math.round(n * 100) / 100;
-
-    const byStatus: Record<Status, { count: number; hours: number }> = {
-      [Status.PENDING]: { count: 0, hours: 0 },
-      [Status.VERIFIED]: { count: 0, hours: 0 },
-      [Status.APPROVED]: { count: 0, hours: 0 },
-      [Status.REJECTED]: { count: 0, hours: 0 },
-    };
-    const approvedHoursByCategory: Record<Category, number> = {
-      [Category.ENSINO]: 0,
-      [Category.PESQUISA]: 0,
-      [Category.EXTENSAO]: 0,
-    };
-    const approvedHoursByClass: Record<ActivityClass, number> = {
-      [ActivityClass.COMPLEMENTAR]: 0,
-      [ActivityClass.LIVRE]: 0,
-    };
-
-    type TypeAgg = {
-      cod: string;
-      label: string;
-      approvedHours: number;
-      maxHoursTotal: number | null;
-    };
-    const byActivityType = new Map<string, TypeAgg>();
-
-    for (const activity of activities) {
-      const status = activity.status ?? Status.PENDING;
-      const hours = activity.hoursEquivalent?.toNumber() ?? 0;
-
-      byStatus[status].count += 1;
-      byStatus[status].hours += hours;
-
-      if (status !== Status.APPROVED) continue;
-
-      const category = activity.activity_types?.category;
-      if (category) approvedHoursByCategory[category] += hours;
-      if (activity.class) approvedHoursByClass[activity.class] += hours;
-
-      const type = activity.activity_types;
-      if (type) {
-        const existing = byActivityType.get(type.id);
-        if (existing) {
-          existing.approvedHours += hours;
-        } else {
-          byActivityType.set(type.id, {
-            cod: type.cod,
-            label: type.label,
-            approvedHours: hours,
-            maxHoursTotal: resolveMaxHoursTotal(
-              type.maxHoursInComplementarActivities,
-              author?.curriculumYear ?? null,
-              type.curriculumRules,
-            ),
-          });
-        }
-      }
-    }
-
-    for (const key of Object.keys(byStatus) as Status[]) {
-      byStatus[key].hours = round2(byStatus[key].hours);
-    }
-    for (const key of Object.keys(approvedHoursByCategory) as Category[]) {
-      approvedHoursByCategory[key] = round2(approvedHoursByCategory[key]);
-    }
-    for (const key of Object.keys(approvedHoursByClass) as ActivityClass[]) {
-      approvedHoursByClass[key] = round2(approvedHoursByClass[key]);
-    }
-
-    const curriculumYear = author?.curriculumYear ?? null;
-    const course = author?.course ?? null;
-    const rules = curriculumYear ? CURRICULUM_RULES[curriculumYear] : null;
-
-    const categoryProgress: CategoryProgressDto[] = (
-      [Category.ENSINO, Category.PESQUISA, Category.EXTENSAO] as Category[]
-    ).map((category) => {
-      const hoursAchieved = approvedHoursByCategory[category];
-      const minRequired = rules?.minHoursPerCategory ?? null;
-      return {
-        category,
-        hoursAchieved,
-        minRequired,
-        meetsMinimum:
-          minRequired !== null ? hoursAchieved >= minRequired : false,
-      };
+    const progress = calculateActivityProgress({
+      curriculumYear: author?.curriculumYear ?? null,
+      course: author?.course ?? null,
+      activities: activities.map((a) => ({
+        status: a.status,
+        class: a.class,
+        hoursEquivalent: a.hoursEquivalent?.toNumber() ?? 0,
+        activityType: a.activity_types
+          ? {
+              id: a.activity_types.id,
+              cod: a.activity_types.cod,
+              label: a.activity_types.label,
+              category: a.activity_types.category,
+              maxHoursInComplementarActivities:
+                a.activity_types.maxHoursInComplementarActivities,
+              curriculumRules: a.activity_types.curriculumRules,
+            }
+          : null,
+      })),
     });
 
-    const totalRawComp = approvedHoursByClass[ActivityClass.COMPLEMENTAR];
-    const minRequired =
-      rules && course ? (rules.totalMinByCourse[course] ?? null) : null;
-    const maxAccepted =
-      rules && course ? (rules.totalMaxByCourse[course] ?? null) : null;
-    const totalCountedComp =
-      maxAccepted !== null ? Math.min(totalRawComp, maxAccepted) : totalRawComp;
-
-    const meetsCategoryRule = rules
-      ? this.checkCategoryRule(categoryProgress, rules.minCategoriesRequired)
-      : false;
-    const meetsTotalMin =
-      minRequired !== null ? totalCountedComp >= minRequired : false;
-
-    const carriedOverRaw = totalRawComp - totalCountedComp;
-    const carriedOver = rules
-      ? round2(carriedOverRaw * rules.excessToFreeMultiplier)
-      : 0;
-    const loggedFree = approvedHoursByClass[ActivityClass.LIVRE];
-    const totalFree = round2(loggedFree + carriedOver);
-    const minFree = rules?.minFreeHours ?? 217;
-
-    const cappedTypes: CappedTypeWarningDto[] = [];
-    for (const agg of byActivityType.values()) {
-      if (
-        agg.maxHoursTotal !== null &&
-        agg.approvedHours >= agg.maxHoursTotal
-      ) {
-        cappedTypes.push({
-          cod: agg.cod,
-          label: agg.label,
-          hoursAchieved: round2(agg.approvedHours),
-          maxAllowed: agg.maxHoursTotal,
-        });
-      }
-    }
-    cappedTypes.sort((a, b) => a.cod.localeCompare(b.cod));
-
     return {
-      totalActivities: activities.length,
-      totalHoursApproved: byStatus[Status.APPROVED].hours,
-      totalHoursInReview: round2(
-        byStatus[Status.PENDING].hours + byStatus[Status.VERIFIED].hours,
-      ),
-      byStatus,
-      approvedHoursByCategory,
-      approvedHoursByClass,
-      curriculum: { curriculumYear, course },
-      categoryProgress,
-      complementaryProgress: {
-        totalRawHours: round2(totalRawComp),
-        totalCountedHours: round2(totalCountedComp),
-        minRequired,
-        maxAccepted,
-        meetsMinimum: meetsTotalMin && meetsCategoryRule,
+      totalActivities: progress.totalActivities,
+      totalHoursApproved: progress.totalHoursApproved,
+      totalHoursInReview: progress.totalHoursInReview,
+      byStatus: progress.byStatus,
+      approvedHoursByCategory: progress.approvedHoursByCategory,
+      approvedHoursByClass: progress.approvedHoursByClass,
+      curriculum: {
+        curriculumYear: author?.curriculumYear ?? null,
+        course: author?.course ?? null,
       },
-      freeProgress: {
-        loggedHours: round2(loggedFree),
-        carriedOverFromComplementary: carriedOver,
-        totalHours: totalFree,
-        minRequired: minFree,
-        meetsMinimum: totalFree >= minFree,
-      },
-      cappedTypes,
+      categoryProgress: progress.categoryProgress,
+      complementaryProgress: progress.complementaryProgress,
+      freeProgress: progress.freeProgress,
+      cappedTypes: progress.cappedTypes,
     };
-  }
-
-  private checkCategoryRule(
-    progress: CategoryProgressDto[],
-    required: 2 | 3 | null,
-  ): boolean {
-    if (required === null) return true;
-    const passing = progress.filter((p) => p.meetsMinimum).length;
-    return passing >= required;
   }
 
   async getEvents(activityId: string): Promise<ActivityEventResponseDto[]> {
