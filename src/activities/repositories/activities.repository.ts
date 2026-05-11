@@ -4,12 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
+import { UpdateActivityDto } from '../dto/UpdateActivityDto';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { Prisma, Status } from '@prisma/client';
 import {
   ActivityResponseDto,
   CreateActivityResponseDto,
-  UpdateActivityStatusResponseDto,
+  UpdateActivityResponseDto,
 } from '../dto/ActivityResponseDto';
 import { ActivityMapper } from '../mappers/activity.mapper';
 import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
@@ -156,7 +157,7 @@ export class ActivitiesRepository {
     status: Status,
     actorId: string,
     comment?: string,
-  ): Promise<UpdateActivityStatusResponseDto> {
+  ): Promise<UpdateActivityResponseDto> {
     const activity = await this.prisma.activities.findUnique({
       where: { id },
       select: { status: true },
@@ -197,6 +198,146 @@ export class ActivitiesRepository {
 
     return {
       message: `Activity ${status.toLowerCase()} successfully`,
+      activity: ActivityMapper.toResponseDto(updated),
+    };
+  }
+
+  async updateActivity(
+    id: string,
+    dto: UpdateActivityDto,
+    actorId: string,
+  ): Promise<UpdateActivityResponseDto> {
+    const existing = await this.prisma.activities.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        class: true,
+        activityTypeId: true,
+        hours: true,
+        startDate: true,
+        endDate: true,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`Activity with id ${id} not found`);
+    }
+
+    const currentStatus = existing.status ?? Status.PENDING;
+    if (currentStatus !== Status.PENDING) {
+      throw new BadRequestException(
+        `Apenas atividades PENDING podem ser editadas (status atual: ${currentStatus})`,
+      );
+    }
+
+    const mergedActivityTypeId = dto.activityTypeId ?? existing.activityTypeId;
+    if (dto.activityTypeId && dto.activityTypeId !== existing.activityTypeId) {
+      const exists = await this.prisma.activity_types.findUnique({
+        where: { id: dto.activityTypeId },
+        select: { id: true },
+      });
+      if (!exists) {
+        throw new NotFoundException(
+          `Activity type with id ${dto.activityTypeId} not found`,
+        );
+      }
+    }
+
+    const mergedStartDate = dto.startDate ?? existing.startDate;
+    const mergedEndDate = dto.endDate ?? existing.endDate;
+    if (
+      mergedStartDate &&
+      mergedEndDate &&
+      mergedEndDate.getTime() < mergedStartDate.getTime()
+    ) {
+      throw new BadRequestException(
+        'endDate deve ser maior ou igual a startDate',
+      );
+    }
+
+    if (!mergedActivityTypeId) {
+      throw new BadRequestException(
+        'activityTypeId é obrigatório para recalcular as horas equivalentes',
+      );
+    }
+
+    const activityType = await this.prisma.activity_types.findUnique({
+      where: { id: mergedActivityTypeId },
+      select: {
+        cod: true,
+        unity: true,
+        maxHoursPerCertificateOrSemester: true,
+      },
+    });
+    if (!activityType) {
+      throw new NotFoundException(
+        `Activity type with id ${mergedActivityTypeId} not found`,
+      );
+    }
+
+    const mergedClass = dto.class ?? existing.class;
+    const mergedHours =
+      dto.hours !== undefined
+        ? dto.hours
+        : (existing.hours?.toNumber() ?? null);
+
+    const hoursEquivalent = calculateHoursEquivalent(
+      {
+        class: mergedClass,
+        startDate: mergedStartDate,
+        endDate: mergedEndDate,
+        quantity: mergedHours,
+      },
+      {
+        cod: activityType.cod,
+        unity: activityType.unity,
+        maxHoursPerCertificateOrSemester:
+          activityType.maxHoursPerCertificateOrSemester,
+      },
+    );
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.activities.update({
+        where: { id },
+        data: {
+          ...(dto.activityTypeId !== undefined && {
+            activityTypeId: dto.activityTypeId,
+          }),
+          ...(dto.class !== undefined && { class: dto.class }),
+          ...(dto.event !== undefined && { event: dto.event }),
+          ...(dto.organization !== undefined && {
+            organization: dto.organization,
+          }),
+          ...(dto.hours !== undefined && {
+            hours: dto.hours != null ? new Prisma.Decimal(dto.hours) : null,
+          }),
+          hoursEquivalent: new Prisma.Decimal(hoursEquivalent),
+          ...(dto.certificateUrl !== undefined && {
+            certificateUrl: dto.certificateUrl,
+          }),
+          ...(dto.startDate !== undefined && { startDate: dto.startDate }),
+          ...(dto.endDate !== undefined && { endDate: dto.endDate }),
+          updatedAt: new Date(),
+        },
+        include: activityInclude,
+      });
+
+      await tx.activity_events.create({
+        data: {
+          activityId: id,
+          fromStatus: currentStatus,
+          toStatus: currentStatus,
+          actorId,
+          comment: 'Atividade editada',
+        },
+      });
+
+      return result;
+    });
+
+    return {
+      message: 'Activity updated successfully',
       activity: ActivityMapper.toResponseDto(updated),
     };
   }

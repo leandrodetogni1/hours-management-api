@@ -89,7 +89,7 @@ export class CreateActivityResponseDto {
   activity: ActivityResponseDto;
 }
 
-export class UpdateActivityStatusResponseDto {
+export class UpdateActivityResponseDto {
   @ApiProperty({ example: 'Atividade aprovada com sucesso' })
   message: string;
 

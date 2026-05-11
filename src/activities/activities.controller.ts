@@ -11,10 +11,11 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ActivitiesService } from './services/activities.service.js';
 import { CreateActivityDto } from './dto/CreateActivityDto.js';
+import { UpdateActivityDto } from './dto/UpdateActivityDto.js';
 import {
   ActivityResponseDto,
   CreateActivityResponseDto,
-  UpdateActivityStatusResponseDto,
+  UpdateActivityResponseDto,
 } from './dto/ActivityResponseDto.js';
 import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
 import { GetMyActivitiesQueryDto } from './dto/GetMyActivitiesQueryDto.js';
@@ -101,6 +102,39 @@ export class ActivitiesController {
     return this.activitiesService.createActivity(user.sub, body);
   }
 
+  @Patch(':id')
+  @ApiEndpoint({
+    summary:
+      'Editar uma atividade PENDING — dono da atividade ou owner/admin/reviewer (apenas campos enviados são alterados; hoursEquivalent é recalculado)',
+    description: 'Atividade atualizada',
+    type: UpdateActivityResponseDto,
+    params: [ID_PARAM],
+    hasBody: true,
+    errors: [
+      {
+        status: 400,
+        description:
+          'Atividade não está em PENDING (apenas PENDING pode ser editada) ou endDate < startDate',
+      },
+      {
+        status: 403,
+        description:
+          'Acesso negado (apenas o dono da atividade ou owner/admin/reviewer)',
+      },
+      {
+        status: 404,
+        description: 'Atividade ou tipo de atividade não encontrado',
+      },
+    ],
+  })
+  updateActivity(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id') id: string,
+    @Body() body: UpdateActivityDto,
+  ): Promise<UpdateActivityResponseDto> {
+    return this.activitiesService.updateActivity(id, body, user);
+  }
+
   @Get(':id/events')
   @ApiEndpoint({
     summary:
@@ -130,7 +164,7 @@ export class ActivitiesController {
     summary:
       'Aprovar uma atividade (a partir de PENDING ou VERIFIED) — owner/admin apenas',
     description: 'Atividade aprovada',
-    type: UpdateActivityStatusResponseDto,
+    type: UpdateActivityResponseDto,
     params: [ID_PARAM],
     roles: APPROVER_ROLES,
     hasBody: true,
@@ -146,7 +180,7 @@ export class ActivitiesController {
     @CurrentUser() user: JwtUserPayload,
     @Param('id') id: string,
     @Body() body: TransitionActivityDto,
-  ): Promise<UpdateActivityStatusResponseDto> {
+  ): Promise<UpdateActivityResponseDto> {
     return this.activitiesService.approveActivity(id, user.sub, body.comment);
   }
 
@@ -155,7 +189,7 @@ export class ActivitiesController {
     summary:
       'Rejeitar uma atividade (a partir de PENDING ou VERIFIED) — admin/reviewer',
     description: 'Atividade rejeitada',
-    type: UpdateActivityStatusResponseDto,
+    type: UpdateActivityResponseDto,
     params: [ID_PARAM],
     roles: REVIEWER_ROLES,
     hasBody: true,
@@ -171,7 +205,7 @@ export class ActivitiesController {
     @CurrentUser() user: JwtUserPayload,
     @Param('id') id: string,
     @Body() body: TransitionActivityDto,
-  ): Promise<UpdateActivityStatusResponseDto> {
+  ): Promise<UpdateActivityResponseDto> {
     return this.activitiesService.rejectActivity(id, user.sub, body.comment);
   }
 
@@ -179,7 +213,7 @@ export class ActivitiesController {
   @ApiEndpoint({
     summary: 'Verificar uma atividade (a partir de PENDING) — admin/reviewer',
     description: 'Atividade verificada',
-    type: UpdateActivityStatusResponseDto,
+    type: UpdateActivityResponseDto,
     params: [ID_PARAM],
     roles: REVIEWER_ROLES,
     hasBody: true,
@@ -195,7 +229,7 @@ export class ActivitiesController {
     @CurrentUser() user: JwtUserPayload,
     @Param('id') id: string,
     @Body() body: TransitionActivityDto,
-  ): Promise<UpdateActivityStatusResponseDto> {
+  ): Promise<UpdateActivityResponseDto> {
     return this.activitiesService.verifyActivity(id, user.sub, body.comment);
   }
 }
