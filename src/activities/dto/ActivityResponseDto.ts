@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ActivityTypeSummaryDto } from '../../activity-types/dto/ActivityTypeResponseDto.js';
+import { ActivityTypeNestedDto } from '../../activity-types/dto/ActivityTypeResponseDto.js';
 
 export class ActivityUserSummaryDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -22,14 +22,8 @@ export class ActivityResponseDto {
   @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440000' })
   authorId: string | null;
 
-  @ApiPropertyOptional({ example: 'HORAS' })
-  unity: string | null;
-
   @ApiPropertyOptional({ example: 'PENDING' })
   status: string | null;
-
-  @ApiPropertyOptional({ example: 'ENSINO' })
-  category: string | null;
 
   @ApiPropertyOptional({ example: 'COMPLEMENTAR' })
   class: string | null;
@@ -61,8 +55,8 @@ export class ActivityResponseDto {
   @ApiPropertyOptional({ type: ActivityUserSummaryDto, nullable: true })
   users: ActivityUserSummaryDto | null;
 
-  @ApiPropertyOptional({ type: ActivityTypeSummaryDto, nullable: true })
-  activity_types: ActivityTypeSummaryDto | null;
+  @ApiPropertyOptional({ type: ActivityTypeNestedDto, nullable: true })
+  activity_types: ActivityTypeNestedDto | null;
 }
 
 export class CreateActivityResponseDto {

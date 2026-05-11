@@ -12,6 +12,8 @@ import {
   UpdateActivityStatusResponseDto,
 } from '../dto/ActivityResponseDto';
 import { ActivityMapper } from '../mappers/activity.mapper';
+import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
+import { ActivityEventMapper } from '../mappers/activity-event.mapper';
 
 const allowedSourceStatuses: Record<Status, Status[]> = {
   [Status.PENDING]: [],
@@ -34,6 +36,8 @@ const activityInclude = {
       id: true,
       cod: true,
       label: true,
+      category: true,
+      unity: true,
     },
   },
 } as const;
@@ -47,7 +51,7 @@ export class ActivitiesRepository {
       include: activityInclude,
       orderBy: { createdAt: 'desc' },
     });
-    return activities.map(ActivityMapper.toResponseDto);
+    return activities.map((a) => ActivityMapper.toResponseDto(a));
   }
 
   async getByAuthorId(authorId: string): Promise<ActivityResponseDto[]> {
@@ -56,7 +60,7 @@ export class ActivitiesRepository {
       include: activityInclude,
       orderBy: { createdAt: 'desc' },
     });
-    return activities.map(ActivityMapper.toResponseDto);
+    return activities.map((a) => ActivityMapper.toResponseDto(a));
   }
 
   async createActivity(
@@ -65,6 +69,7 @@ export class ActivitiesRepository {
   ): Promise<CreateActivityResponseDto> {
     const activityType = await this.prisma.activity_types.findUnique({
       where: { id: dto.activityTypeId },
+      select: { id: true },
     });
 
     if (!activityType) {
@@ -75,26 +80,39 @@ export class ActivitiesRepository {
 
     const author = await this.prisma.users.findUnique({
       where: { id: authorId },
+      select: { id: true },
     });
 
     if (!author) {
       throw new NotFoundException(`User with id ${authorId} not found`);
     }
 
-    const activity = await this.prisma.activities.create({
-      data: {
-        authorId,
-        activityTypeId: dto.activityTypeId,
-        category: activityType.category,
-        unity: activityType.unity,
-        class: dto.class,
-        event: dto.event,
-        organization: dto.organization,
-        hours: new Prisma.Decimal(dto.hours),
-        startDate: dto.startDate,
-        endDate: dto.endDate,
-      },
-      include: activityInclude,
+    const activity = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.activities.create({
+        data: {
+          authorId,
+          activityTypeId: dto.activityTypeId,
+          class: dto.class,
+          event: dto.event,
+          organization: dto.organization,
+          hours: new Prisma.Decimal(dto.hours),
+          startDate: dto.startDate,
+          endDate: dto.endDate,
+        },
+        include: activityInclude,
+      });
+
+      await tx.activity_events.create({
+        data: {
+          activityId: created.id,
+          fromStatus: null,
+          toStatus: Status.PENDING,
+          actorId: authorId,
+          comment: null,
+        },
+      });
+
+      return created;
     });
 
     return {
@@ -106,9 +124,12 @@ export class ActivitiesRepository {
   async updateActivityStatus(
     id: string,
     status: Status,
+    actorId: string,
+    comment?: string,
   ): Promise<UpdateActivityStatusResponseDto> {
     const activity = await this.prisma.activities.findUnique({
       where: { id },
+      select: { status: true },
     });
 
     if (!activity) {
@@ -124,15 +145,47 @@ export class ActivitiesRepository {
       );
     }
 
-    const updated = await this.prisma.activities.update({
-      where: { id },
-      data: { status },
-      include: activityInclude,
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.activities.update({
+        where: { id },
+        data: { status, updatedAt: new Date() },
+        include: activityInclude,
+      });
+
+      await tx.activity_events.create({
+        data: {
+          activityId: id,
+          fromStatus: currentStatus,
+          toStatus: status,
+          actorId,
+          comment: comment ?? null,
+        },
+      });
+
+      return result;
     });
 
     return {
       message: `Activity ${status.toLowerCase()} successfully`,
       activity: ActivityMapper.toResponseDto(updated),
     };
+  }
+
+  async getEvents(activityId: string): Promise<ActivityEventResponseDto[]> {
+    const activity = await this.prisma.activities.findUnique({
+      where: { id: activityId },
+      select: { id: true },
+    });
+
+    if (!activity) {
+      throw new NotFoundException(`Activity with id ${activityId} not found`);
+    }
+
+    const events = await this.prisma.activity_events.findMany({
+      where: { activityId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return events.map((e) => ActivityEventMapper.toResponseDto(e));
   }
 }

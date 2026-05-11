@@ -32,7 +32,7 @@ export class ActivityTypesRepository {
       },
       orderBy: { cod: 'asc' },
     });
-    return activityTypes.map(ActivityTypeMapper.toResponseDto);
+    return activityTypes.map((at) => ActivityTypeMapper.toResponseDto(at));
   }
 
   async findById(id: string): Promise<ActivityTypeResponseDto | null> {

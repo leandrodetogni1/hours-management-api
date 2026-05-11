@@ -17,12 +17,15 @@ import {
   UpdateActivityStatusResponseDto,
 } from './dto/ActivityResponseDto.js';
 import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
+import { TransitionActivityDto } from './dto/TransitionActivityDto.js';
+import { ActivityEventResponseDto } from './dto/ActivityEventResponseDto.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
 
 const ID_PARAM = { name: 'id', description: 'UUID da atividade' };
 const REVIEWER_ROLES = ['admin', 'reviewer'];
+const PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'];
 
 @ApiTags('Activities')
 @ApiBearerAuth()
@@ -32,15 +35,30 @@ export class ActivitiesController {
 
   @Get()
   @ApiEndpoint({
-    summary: 'Listar atividades (filtro opcional por authorId)',
+    summary:
+      'Listar atividades — owner/admin/reviewer apenas (filtro opcional por authorId)',
     description: 'Lista de atividades',
     type: ActivityResponseDto,
     isArray: true,
+    roles: PRIVILEGED_ROLES,
   })
   findAll(
     @Query() query: GetActivitiesQueryDto,
   ): Promise<ActivityResponseDto[]> {
     return this.activitiesService.getAllActivities(query.authorId);
+  }
+
+  @Get('me')
+  @ApiEndpoint({
+    summary: 'Listar as atividades do usuário autenticado',
+    description: 'Lista de atividades do próprio usuário',
+    type: ActivityResponseDto,
+    isArray: true,
+  })
+  findMine(
+    @CurrentUser() user: JwtUserPayload,
+  ): Promise<ActivityResponseDto[]> {
+    return this.activitiesService.getActivitiesByUserId(user.sub);
   }
 
   @Post()
@@ -62,6 +80,23 @@ export class ActivitiesController {
     return this.activitiesService.createActivity(user.sub, body);
   }
 
+  @Get(':id/events')
+  @ApiEndpoint({
+    summary:
+      'Listar eventos (timeline) de uma atividade — owner/admin/reviewer apenas',
+    description: 'Lista de eventos',
+    type: ActivityEventResponseDto,
+    isArray: true,
+    params: [ID_PARAM],
+    roles: PRIVILEGED_ROLES,
+    errors: [{ status: 404, description: 'Atividade não encontrada' }],
+  })
+  getActivityEvents(
+    @Param('id') id: string,
+  ): Promise<ActivityEventResponseDto[]> {
+    return this.activitiesService.getActivityEvents(id);
+  }
+
   @Patch(':id/approve')
   @ApiEndpoint({
     summary:
@@ -70,6 +105,7 @@ export class ActivitiesController {
     type: UpdateActivityStatusResponseDto,
     params: [ID_PARAM],
     roles: REVIEWER_ROLES,
+    hasBody: true,
     errors: [
       {
         status: 400,
@@ -79,9 +115,11 @@ export class ActivitiesController {
     ],
   })
   approveActivity(
+    @CurrentUser() user: JwtUserPayload,
     @Param('id') id: string,
+    @Body() body: TransitionActivityDto,
   ): Promise<UpdateActivityStatusResponseDto> {
-    return this.activitiesService.approveActivity(id);
+    return this.activitiesService.approveActivity(id, user.sub, body.comment);
   }
 
   @Patch(':id/reject')
@@ -92,6 +130,7 @@ export class ActivitiesController {
     type: UpdateActivityStatusResponseDto,
     params: [ID_PARAM],
     roles: REVIEWER_ROLES,
+    hasBody: true,
     errors: [
       {
         status: 400,
@@ -101,9 +140,11 @@ export class ActivitiesController {
     ],
   })
   rejectActivity(
+    @CurrentUser() user: JwtUserPayload,
     @Param('id') id: string,
+    @Body() body: TransitionActivityDto,
   ): Promise<UpdateActivityStatusResponseDto> {
-    return this.activitiesService.rejectActivity(id);
+    return this.activitiesService.rejectActivity(id, user.sub, body.comment);
   }
 
   @Patch(':id/verify')
@@ -113,6 +154,7 @@ export class ActivitiesController {
     type: UpdateActivityStatusResponseDto,
     params: [ID_PARAM],
     roles: REVIEWER_ROLES,
+    hasBody: true,
     errors: [
       {
         status: 400,
@@ -122,8 +164,10 @@ export class ActivitiesController {
     ],
   })
   verifyActivity(
+    @CurrentUser() user: JwtUserPayload,
     @Param('id') id: string,
+    @Body() body: TransitionActivityDto,
   ): Promise<UpdateActivityStatusResponseDto> {
-    return this.activitiesService.verifyActivity(id);
+    return this.activitiesService.verifyActivity(id, user.sub, body.comment);
   }
 }

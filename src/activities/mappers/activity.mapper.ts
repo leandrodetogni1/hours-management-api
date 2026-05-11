@@ -4,9 +4,7 @@ export class ActivityMapper {
   static toResponseDto(activity: {
     id: string;
     authorId: string | null;
-    unity: string | null;
     status: string | null;
-    category: string | null;
     class: string | null;
     activityTypeId: string | null;
     event: string | null;
@@ -26,14 +24,14 @@ export class ActivityMapper {
       id: string;
       cod: string;
       label: string;
+      category: string | null;
+      unity: string | null;
     } | null;
   }): ActivityResponseDto {
     return {
       id: activity.id,
       authorId: activity.authorId,
-      unity: activity.unity,
       status: activity.status,
-      category: activity.category,
       class: activity.class,
       activityTypeId: activity.activityTypeId,
       event: activity.event,

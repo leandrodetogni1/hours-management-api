@@ -7,6 +7,7 @@ import {
   CreateActivityResponseDto,
   UpdateActivityStatusResponseDto,
 } from '../dto/ActivityResponseDto';
+import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
 
 @Injectable()
 export class ActivitiesService {
@@ -30,15 +31,46 @@ export class ActivitiesService {
     return this.activityRepository.createActivity(authorId, activity);
   }
 
-  approveActivity(id: string): Promise<UpdateActivityStatusResponseDto> {
-    return this.activityRepository.updateActivityStatus(id, Status.APPROVED);
+  approveActivity(
+    id: string,
+    actorId: string,
+    comment?: string,
+  ): Promise<UpdateActivityStatusResponseDto> {
+    return this.activityRepository.updateActivityStatus(
+      id,
+      Status.APPROVED,
+      actorId,
+      comment,
+    );
   }
 
-  rejectActivity(id: string): Promise<UpdateActivityStatusResponseDto> {
-    return this.activityRepository.updateActivityStatus(id, Status.REJECTED);
+  rejectActivity(
+    id: string,
+    actorId: string,
+    comment?: string,
+  ): Promise<UpdateActivityStatusResponseDto> {
+    return this.activityRepository.updateActivityStatus(
+      id,
+      Status.REJECTED,
+      actorId,
+      comment,
+    );
   }
 
-  verifyActivity(id: string): Promise<UpdateActivityStatusResponseDto> {
-    return this.activityRepository.updateActivityStatus(id, Status.VERIFIED);
+  verifyActivity(
+    id: string,
+    actorId: string,
+    comment?: string,
+  ): Promise<UpdateActivityStatusResponseDto> {
+    return this.activityRepository.updateActivityStatus(
+      id,
+      Status.VERIFIED,
+      actorId,
+      comment,
+    );
+  }
+
+  getActivityEvents(activityId: string): Promise<ActivityEventResponseDto[]> {
+    return this.activityRepository.getEvents(activityId);
   }
 }

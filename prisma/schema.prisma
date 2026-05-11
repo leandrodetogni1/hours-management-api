@@ -48,22 +48,35 @@ model roles {
 }
 
 model activities {
-  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  authorId     String?     @map("authorid") @db.Uuid
-  unity        Unity?
-  status       Status?     @default(PENDING)
-  category     Category?
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorId       String?           @map("authorid") @db.Uuid
+  status         Status?           @default(PENDING)
   class          ActivityClass?
-  activityTypeId String?         @map("activitytypeid") @db.Uuid
-  event          String?         @db.VarChar(255)
-  organization String?     @db.VarChar(255)
-  hours        Decimal?    @db.Decimal(10, 2)
-  startDate    DateTime?   @map("startdate") @db.Date
-  endDate      DateTime?   @map("enddate") @db.Date
-  createdAt    DateTime?   @map("createdat") @default(now()) @db.Timestamp(6)
-  updatedAt    DateTime?   @map("updatedat") @default(now()) @db.Timestamp(6)
-  users          users?          @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  activity_types activity_types? @relation(fields: [activityTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  activityTypeId String?           @map("activitytypeid") @db.Uuid
+  event          String?           @db.VarChar(255)
+  organization   String?           @db.VarChar(255)
+  hours          Decimal?          @db.Decimal(10, 2)
+  startDate      DateTime?         @map("startdate") @db.Date
+  endDate        DateTime?         @map("enddate") @db.Date
+  createdAt      DateTime?         @map("createdat") @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime?         @map("updatedat") @default(now()) @db.Timestamp(6)
+  users          users?            @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  activity_types activity_types?   @relation(fields: [activityTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  events         activity_events[]
+}
+
+model activity_events {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  activityId String     @map("activityid") @db.Uuid
+  fromStatus Status?    @map("fromstatus")
+  toStatus   Status     @map("tostatus")
+  actorId    String     @map("actorid") @db.Uuid
+  comment    String?    @db.VarChar(500)
+  createdAt  DateTime   @default(now()) @map("createdat") @db.Timestamp(6)
+  activities activities @relation(fields: [activityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([activityId, createdAt])
+  @@index([actorId])
 }
 
 model activity_types {
