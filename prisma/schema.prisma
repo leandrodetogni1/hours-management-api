@@ -41,6 +41,12 @@ enum Course {
   ENGENHARIA_DA_COMPUTACAO
 }
 
+enum CurriculumYear {
+  Y2012
+  Y2013
+  Y2015
+}
+
 model roles {
   id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String        @unique @db.VarChar(50)
@@ -64,11 +70,13 @@ model activities {
   status         Status?           @default(PENDING)
   class          ActivityClass?
   activityTypeId String?           @map("activitytypeid") @db.Uuid
-  event          String?           @db.VarChar(255)
-  organization   String?           @db.VarChar(255)
-  hours          Decimal?          @db.Decimal(10, 2)
-  startDate      DateTime?         @map("startdate") @db.Date
-  endDate        DateTime?         @map("enddate") @db.Date
+  event           String?          @db.VarChar(255)
+  organization    String?          @db.VarChar(255)
+  hours           Decimal?         @db.Decimal(10, 2)
+  hoursEquivalent Decimal?         @map("hoursequivalent") @db.Decimal(10, 2)
+  certificateUrl  String?          @map("certificateurl") @db.VarChar(500)
+  startDate       DateTime?        @map("startdate") @db.Date
+  endDate         DateTime?        @map("enddate") @db.Date
   createdAt      DateTime?         @map("createdat") @default(now()) @db.Timestamp(6)
   updatedAt      DateTime?         @map("updatedat") @default(now()) @db.Timestamp(6)
   users          users?            @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -99,6 +107,17 @@ model activity_types {
   maxHoursInComplementarActivities Int?        @map("max_hours_complementar")
   maxHoursPerCertificateOrSemester Int?        @map("max_hours_per_certificate")
   activities                      activities[]
+  curriculumRules                 activity_type_curriculum_rules[]
+}
+
+model activity_type_curriculum_rules {
+  activityTypeId  String         @map("activitytypeid") @db.Uuid
+  curriculumYear  CurriculumYear @map("curriculumyear")
+  maxHoursTotal   Int            @map("max_hours_total")
+  activityType    activity_types @relation(fields: [activityTypeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([activityTypeId, curriculumYear])
+  @@map("activity_type_curriculum_rules")
 }
 
 
@@ -113,8 +132,9 @@ model users {
   updatedAt  DateTime?    @map("updatedat") @default(now()) @db.Timestamp(6)
   email      String         @unique @db.VarChar(255)
   matricula  String?        @unique @db.VarChar(20)
-  situation  UserSituation?
-  course     Course?
-  activities activities[]
+  situation       UserSituation?
+  course          Course?
+  curriculumYear  CurriculumYear? @map("curriculumyear")
+  activities      activities[]
   invitationsCreated invitations[] @relation("InvitationInviter")
 }

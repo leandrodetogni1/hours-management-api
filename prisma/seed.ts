@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Category, PrismaClient, Unity } from '@prisma/client';
+import { Category, CurriculumYear, PrismaClient, Unity } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
@@ -151,6 +151,41 @@ async function main() {
         maxHoursPerCertificateOrSemester: at.maxHoursPerCertificateOrSemester,
       },
       create: at,
+    });
+  }
+
+  const curriculumRules: Array<{
+    cod: string;
+    year: CurriculumYear;
+    maxHoursTotal: number;
+  }> = [
+    { cod: 'C', year: CurriculumYear.Y2012, maxHoursTotal: 102 },
+    { cod: 'C', year: CurriculumYear.Y2013, maxHoursTotal: 102 },
+    { cod: 'C', year: CurriculumYear.Y2015, maxHoursTotal: 153 },
+    { cod: 'D', year: CurriculumYear.Y2012, maxHoursTotal: 102 },
+    { cod: 'D', year: CurriculumYear.Y2013, maxHoursTotal: 102 },
+    { cod: 'D', year: CurriculumYear.Y2015, maxHoursTotal: 153 },
+  ];
+
+  for (const rule of curriculumRules) {
+    const type = await prisma.activity_types.findUnique({
+      where: { cod: rule.cod },
+      select: { id: true },
+    });
+    if (!type) continue;
+    await prisma.activity_type_curriculum_rules.upsert({
+      where: {
+        activityTypeId_curriculumYear: {
+          activityTypeId: type.id,
+          curriculumYear: rule.year,
+        },
+      },
+      update: { maxHoursTotal: rule.maxHoursTotal },
+      create: {
+        activityTypeId: type.id,
+        curriculumYear: rule.year,
+        maxHoursTotal: rule.maxHoursTotal,
+      },
     });
   }
 

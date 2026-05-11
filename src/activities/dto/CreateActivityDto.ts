@@ -73,22 +73,37 @@ export class CreateActivityDto {
   })
   organization?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 40,
-    description: 'Quantidade de horas (0.5 a 10000)',
-    minimum: 0.5,
+    description:
+      'Quantidade informada pelo aluno. Semântica depende do tipo: para A é o número de semestres; para E/F/G/L são as horas do certificado; para H1-3, I1-3, K basta um valor > 0 (presença). Para B/C/D/J deve ser omitido — o sistema calcula os semestres a partir de startDate/endDate.',
+    minimum: 0,
     maximum: 10000,
   })
   @Expose()
-  @IsNotEmpty({ message: 'hours é obrigatório' })
+  @IsOptional()
   @Type(() => Number)
   @IsNumber(
     { allowNaN: false, allowInfinity: false, maxDecimalPlaces: 2 },
     { message: 'hours deve ser um número com no máximo 2 casas decimais' },
   )
-  @Min(0.5, { message: 'hours deve ser maior ou igual a 0.5' })
+  @Min(0, { message: 'hours deve ser maior ou igual a 0' })
   @Max(10000, { message: 'hours deve ser menor ou igual a 10000' })
-  hours: number;
+  hours?: number;
+
+  @ApiPropertyOptional({
+    example: 'https://drive.google.com/file/d/abc123/view',
+    description: 'URL de validação do certificado (até 500 caracteres)',
+    maxLength: 500,
+  })
+  @Expose()
+  @Transform(trim)
+  @IsOptional()
+  @IsString({ message: 'certificateUrl deve ser uma string' })
+  @MaxLength(500, {
+    message: 'certificateUrl deve ter no máximo 500 caracteres',
+  })
+  certificateUrl?: string;
 
   @ApiProperty({
     example: '2025-03-01',

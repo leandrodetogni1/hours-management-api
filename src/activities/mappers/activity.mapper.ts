@@ -10,6 +10,8 @@ export class ActivityMapper {
     event: string | null;
     organization: string | null;
     hours: { toNumber(): number } | null;
+    hoursEquivalent: { toNumber(): number } | null;
+    certificateUrl: string | null;
     startDate: Date | null;
     endDate: Date | null;
     createdAt: Date | null;
@@ -37,6 +39,8 @@ export class ActivityMapper {
       event: activity.event,
       organization: activity.organization,
       hours: activity.hours?.toNumber() ?? null,
+      hoursEquivalent: activity.hoursEquivalent?.toNumber() ?? null,
+      certificateUrl: activity.certificateUrl,
       startDate: activity.startDate?.toISOString() ?? null,
       endDate: activity.endDate?.toISOString() ?? null,
       createdAt: activity.createdAt?.toISOString() ?? null,

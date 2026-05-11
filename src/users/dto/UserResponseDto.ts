@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { CurriculumYear } from '../../enums/CurriculumYear.js';
 import { UserCourse } from '../../enums/UserCourse.js';
 import { UserSituation } from '../../enums/UserSituation.js';
 
@@ -32,6 +33,12 @@ export class UserSummaryDto {
     enum: UserCourse,
   })
   course: UserCourse | null;
+
+  @ApiPropertyOptional({
+    example: 'Y2015',
+    enum: CurriculumYear,
+  })
+  curriculumYear: CurriculumYear | null;
 }
 
 export class UserResponseDto extends UserSummaryDto {

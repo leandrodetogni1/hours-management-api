@@ -14,7 +14,16 @@ import {
 import { ActivityMapper } from '../mappers/activity.mapper';
 import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
 import { ActivityEventMapper } from '../mappers/activity-event.mapper';
-import { ActivitySummaryResponseDto } from '../dto/ActivitySummaryResponseDto';
+import {
+  ActivitySummaryResponseDto,
+  CappedTypeWarningDto,
+  CategoryProgressDto,
+} from '../dto/ActivitySummaryResponseDto';
+import { calculateHoursEquivalent } from '../domain/hours-calculator.js';
+import {
+  CURRICULUM_RULES,
+  resolveMaxHoursTotal,
+} from '../domain/curriculum-rules.js';
 
 const allowedSourceStatuses: Record<Status, Status[]> = {
   [Status.PENDING]: [],
@@ -74,7 +83,12 @@ export class ActivitiesRepository {
   ): Promise<CreateActivityResponseDto> {
     const activityType = await this.prisma.activity_types.findUnique({
       where: { id: dto.activityTypeId },
-      select: { id: true },
+      select: {
+        id: true,
+        cod: true,
+        unity: true,
+        maxHoursPerCertificateOrSemester: true,
+      },
     });
 
     if (!activityType) {
@@ -92,6 +106,21 @@ export class ActivitiesRepository {
       throw new NotFoundException(`User with id ${authorId} not found`);
     }
 
+    const hoursEquivalent = calculateHoursEquivalent(
+      {
+        class: dto.class,
+        startDate: dto.startDate,
+        endDate: dto.endDate,
+        quantity: dto.hours ?? null,
+      },
+      {
+        cod: activityType.cod,
+        unity: activityType.unity,
+        maxHoursPerCertificateOrSemester:
+          activityType.maxHoursPerCertificateOrSemester,
+      },
+    );
+
     const activity = await this.prisma.$transaction(async (tx) => {
       const created = await tx.activities.create({
         data: {
@@ -100,7 +129,9 @@ export class ActivitiesRepository {
           class: dto.class,
           event: dto.event,
           organization: dto.organization,
-          hours: new Prisma.Decimal(dto.hours),
+          hours: dto.hours != null ? new Prisma.Decimal(dto.hours) : null,
+          hoursEquivalent: new Prisma.Decimal(hoursEquivalent),
+          certificateUrl: dto.certificateUrl ?? null,
           startDate: dto.startDate,
           endDate: dto.endDate,
         },
@@ -179,15 +210,33 @@ export class ActivitiesRepository {
   async getSummaryByAuthorId(
     authorId: string,
   ): Promise<ActivitySummaryResponseDto> {
+    const author = await this.prisma.users.findUnique({
+      where: { id: authorId },
+      select: { curriculumYear: true, course: true },
+    });
+
     const activities = await this.prisma.activities.findMany({
       where: { authorId },
       select: {
         status: true,
         class: true,
-        hours: true,
-        activity_types: { select: { category: true } },
+        hoursEquivalent: true,
+        activity_types: {
+          select: {
+            id: true,
+            cod: true,
+            label: true,
+            category: true,
+            maxHoursInComplementarActivities: true,
+            curriculumRules: {
+              select: { curriculumYear: true, maxHoursTotal: true },
+            },
+          },
+        },
       },
     });
+
+    const round2 = (n: number) => Math.round(n * 100) / 100;
 
     const byStatus: Record<Status, { count: number; hours: number }> = {
       [Status.PENDING]: { count: 0, hours: 0 },
@@ -205,25 +254,47 @@ export class ActivitiesRepository {
       [ActivityClass.LIVRE]: 0,
     };
 
+    type TypeAgg = {
+      cod: string;
+      label: string;
+      approvedHours: number;
+      maxHoursTotal: number | null;
+    };
+    const byActivityType = new Map<string, TypeAgg>();
+
     for (const activity of activities) {
       const status = activity.status ?? Status.PENDING;
-      const hours = activity.hours?.toNumber() ?? 0;
+      const hours = activity.hoursEquivalent?.toNumber() ?? 0;
 
       byStatus[status].count += 1;
       byStatus[status].hours += hours;
 
-      if (status === Status.APPROVED) {
-        const category = activity.activity_types?.category;
-        if (category) {
-          approvedHoursByCategory[category] += hours;
-        }
-        if (activity.class) {
-          approvedHoursByClass[activity.class] += hours;
+      if (status !== Status.APPROVED) continue;
+
+      const category = activity.activity_types?.category;
+      if (category) approvedHoursByCategory[category] += hours;
+      if (activity.class) approvedHoursByClass[activity.class] += hours;
+
+      const type = activity.activity_types;
+      if (type) {
+        const existing = byActivityType.get(type.id);
+        if (existing) {
+          existing.approvedHours += hours;
+        } else {
+          byActivityType.set(type.id, {
+            cod: type.cod,
+            label: type.label,
+            approvedHours: hours,
+            maxHoursTotal: resolveMaxHoursTotal(
+              type.maxHoursInComplementarActivities,
+              author?.curriculumYear ?? null,
+              type.curriculumRules,
+            ),
+          });
         }
       }
     }
 
-    const round2 = (n: number) => Math.round(n * 100) / 100;
     for (const key of Object.keys(byStatus) as Status[]) {
       byStatus[key].hours = round2(byStatus[key].hours);
     }
@@ -234,6 +305,62 @@ export class ActivitiesRepository {
       approvedHoursByClass[key] = round2(approvedHoursByClass[key]);
     }
 
+    const curriculumYear = author?.curriculumYear ?? null;
+    const course = author?.course ?? null;
+    const rules = curriculumYear ? CURRICULUM_RULES[curriculumYear] : null;
+
+    const categoryProgress: CategoryProgressDto[] = (
+      [Category.ENSINO, Category.PESQUISA, Category.EXTENSAO] as Category[]
+    ).map((category) => {
+      const hoursAchieved = approvedHoursByCategory[category];
+      const minRequired = rules?.minHoursPerCategory ?? null;
+      return {
+        category,
+        hoursAchieved,
+        minRequired,
+        meetsMinimum:
+          minRequired !== null ? hoursAchieved >= minRequired : false,
+      };
+    });
+
+    const totalRawComp = approvedHoursByClass[ActivityClass.COMPLEMENTAR];
+    const minRequired =
+      rules && course ? (rules.totalMinByCourse[course] ?? null) : null;
+    const maxAccepted =
+      rules && course ? (rules.totalMaxByCourse[course] ?? null) : null;
+    const totalCountedComp =
+      maxAccepted !== null ? Math.min(totalRawComp, maxAccepted) : totalRawComp;
+
+    const meetsCategoryRule = rules
+      ? this.checkCategoryRule(categoryProgress, rules.minCategoriesRequired)
+      : false;
+    const meetsTotalMin =
+      minRequired !== null ? totalCountedComp >= minRequired : false;
+
+    const carriedOverRaw = totalRawComp - totalCountedComp;
+    const carriedOver = rules
+      ? round2(carriedOverRaw * rules.excessToFreeMultiplier)
+      : 0;
+    const loggedFree = approvedHoursByClass[ActivityClass.LIVRE];
+    const totalFree = round2(loggedFree + carriedOver);
+    const minFree = rules?.minFreeHours ?? 217;
+
+    const cappedTypes: CappedTypeWarningDto[] = [];
+    for (const agg of byActivityType.values()) {
+      if (
+        agg.maxHoursTotal !== null &&
+        agg.approvedHours >= agg.maxHoursTotal
+      ) {
+        cappedTypes.push({
+          cod: agg.cod,
+          label: agg.label,
+          hoursAchieved: round2(agg.approvedHours),
+          maxAllowed: agg.maxHoursTotal,
+        });
+      }
+    }
+    cappedTypes.sort((a, b) => a.cod.localeCompare(b.cod));
+
     return {
       totalActivities: activities.length,
       totalHoursApproved: byStatus[Status.APPROVED].hours,
@@ -243,7 +370,33 @@ export class ActivitiesRepository {
       byStatus,
       approvedHoursByCategory,
       approvedHoursByClass,
+      curriculum: { curriculumYear, course },
+      categoryProgress,
+      complementaryProgress: {
+        totalRawHours: round2(totalRawComp),
+        totalCountedHours: round2(totalCountedComp),
+        minRequired,
+        maxAccepted,
+        meetsMinimum: meetsTotalMin && meetsCategoryRule,
+      },
+      freeProgress: {
+        loggedHours: round2(loggedFree),
+        carriedOverFromComplementary: carriedOver,
+        totalHours: totalFree,
+        minRequired: minFree,
+        meetsMinimum: totalFree >= minFree,
+      },
+      cappedTypes,
     };
+  }
+
+  private checkCategoryRule(
+    progress: CategoryProgressDto[],
+    required: 2 | 3 | null,
+  ): boolean {
+    if (required === null) return true;
+    const passing = progress.filter((p) => p.meetsMinimum).length;
+    return passing >= required;
   }
 
   async getEvents(activityId: string): Promise<ActivityEventResponseDto[]> {

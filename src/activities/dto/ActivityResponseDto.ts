@@ -37,8 +37,25 @@ export class ActivityResponseDto {
   @ApiPropertyOptional({ example: 'UFPel' })
   organization: string | null;
 
-  @ApiPropertyOptional({ example: 40 })
+  @ApiPropertyOptional({
+    example: 40,
+    description:
+      'Quantidade bruta informada pelo aluno (semestres / horas brutas do certificado / presença, conforme o tipo)',
+  })
   hours: number | null;
+
+  @ApiPropertyOptional({
+    example: 40,
+    description:
+      'Horas oficialmente reconhecidas após aplicar as regras de cálculo do currículo (campo calculado)',
+  })
+  hoursEquivalent: number | null;
+
+  @ApiPropertyOptional({
+    example: 'https://drive.google.com/file/d/abc123/view',
+    description: 'URL de validação do certificado',
+  })
+  certificateUrl: string | null;
 
   @ApiPropertyOptional({ example: '2025-03-01' })
   startDate: string | null;

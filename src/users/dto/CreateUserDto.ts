@@ -8,6 +8,7 @@ import {
   IsString,
   Matches,
 } from 'class-validator';
+import { CurriculumYear } from '../../enums/CurriculumYear.js';
 import { UserCourse } from '../../enums/UserCourse.js';
 import { UserSituation } from '../../enums/UserSituation.js';
 
@@ -73,4 +74,17 @@ export class CreateUserDto {
       'Curso inválido. Use: CIENCIA_DA_COMPUTACAO ou ENGENHARIA_DA_COMPUTACAO',
   })
   course?: UserCourse;
+
+  @ApiPropertyOptional({
+    example: 'Y2015',
+    enum: CurriculumYear,
+    description:
+      'Ano do currículo do aluno (afeta limites de horas por tipo de atividade)',
+  })
+  @Expose()
+  @IsOptional()
+  @IsEnum(CurriculumYear, {
+    message: 'Currículo inválido. Use: Y2012, Y2013 ou Y2015',
+  })
+  curriculumYear?: CurriculumYear;
 }

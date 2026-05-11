@@ -1,5 +1,6 @@
 import { users, roles } from '@prisma/client';
 import { UserResponseDto, UserSummaryDto } from '../dto/UserResponseDto';
+import { CurriculumYear } from '../../enums/CurriculumYear';
 import { UserCourse } from '../../enums/UserCourse';
 import { UserSituation } from '../../enums/UserSituation';
 
@@ -16,6 +17,7 @@ export class UserMapper {
       matricula: user.matricula ?? null,
       situation: (user.situation as UserSituation) ?? null,
       course: (user.course as UserCourse) ?? null,
+      curriculumYear: (user.curriculumYear as CurriculumYear) ?? null,
       createdAt: user.createdAt?.toISOString() ?? null,
       updatedAt: user.updatedAt?.toISOString() ?? null,
     };
@@ -30,6 +32,7 @@ export class UserMapper {
     matricula: string | null;
     situation: UserSituation | null;
     course: UserCourse | null;
+    curriculumYear: CurriculumYear | null;
   }): UserSummaryDto {
     return {
       id: user.id,
@@ -40,6 +43,7 @@ export class UserMapper {
       matricula: user.matricula ?? null,
       situation: user.situation ?? null,
       course: user.course ?? null,
+      curriculumYear: user.curriculumYear ?? null,
     };
   }
 }

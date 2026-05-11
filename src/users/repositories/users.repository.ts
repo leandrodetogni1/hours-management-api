@@ -9,6 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { Prisma } from '@prisma/client';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { UserMapper } from '../mappers/user.mapper';
+import { CurriculumYear } from '../../enums/CurriculumYear';
 import { UserCourse } from '../../enums/UserCourse';
 import { UserSituation } from '../../enums/UserSituation';
 import { FilterableRole } from '../dto/GetUsersQueryDto';
@@ -63,6 +64,7 @@ export class UsersRepository {
           matricula: user.matricula,
           situation: user.situation ?? null,
           course: user.course ?? null,
+          curriculumYear: user.curriculumYear ?? null,
           role: { connect: { name: 'member' } },
         },
         select: {
@@ -73,6 +75,7 @@ export class UsersRepository {
           matricula: true,
           situation: true,
           course: true,
+          curriculumYear: true,
           role: { select: { name: true } },
         },
       });
@@ -83,6 +86,7 @@ export class UsersRepository {
           ...createdUser,
           situation: createdUser.situation as UserSituation | null,
           course: createdUser.course as UserCourse | null,
+          curriculumYear: createdUser.curriculumYear as CurriculumYear | null,
         }),
       };
     } catch (error) {
@@ -120,6 +124,9 @@ export class UsersRepository {
           ...(data.matricula !== undefined && { matricula: data.matricula }),
           ...(data.situation !== undefined && { situation: data.situation }),
           ...(data.course !== undefined && { course: data.course }),
+          ...(data.curriculumYear !== undefined && {
+            curriculumYear: data.curriculumYear,
+          }),
           updatedAt: new Date(),
         },
         include: { role: true },
