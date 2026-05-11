@@ -27,6 +27,7 @@ import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
 
 const ID_PARAM = { name: 'id', description: 'UUID da atividade' };
 const REVIEWER_ROLES = ['admin', 'reviewer'];
+const APPROVER_ROLES = ['owner', 'admin'];
 const PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'];
 
 @ApiTags('Activities')
@@ -120,11 +121,11 @@ export class ActivitiesController {
   @Patch(':id/approve')
   @ApiEndpoint({
     summary:
-      'Aprovar uma atividade (a partir de PENDING ou VERIFIED) — admin/reviewer',
+      'Aprovar uma atividade (a partir de PENDING ou VERIFIED) — owner/admin apenas',
     description: 'Atividade aprovada',
     type: UpdateActivityStatusResponseDto,
     params: [ID_PARAM],
-    roles: REVIEWER_ROLES,
+    roles: APPROVER_ROLES,
     hasBody: true,
     errors: [
       {
