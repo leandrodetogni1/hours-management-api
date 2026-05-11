@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { Prisma, Status } from '@prisma/client';
+import { ActivityClass, Category, Prisma, Status } from '@prisma/client';
 import {
   ActivityResponseDto,
   CreateActivityResponseDto,
@@ -14,6 +14,7 @@ import {
 import { ActivityMapper } from '../mappers/activity.mapper';
 import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
 import { ActivityEventMapper } from '../mappers/activity-event.mapper';
+import { ActivitySummaryResponseDto } from '../dto/ActivitySummaryResponseDto';
 
 const allowedSourceStatuses: Record<Status, Status[]> = {
   [Status.PENDING]: [],
@@ -172,6 +173,76 @@ export class ActivitiesRepository {
     return {
       message: `Activity ${status.toLowerCase()} successfully`,
       activity: ActivityMapper.toResponseDto(updated),
+    };
+  }
+
+  async getSummaryByAuthorId(
+    authorId: string,
+  ): Promise<ActivitySummaryResponseDto> {
+    const activities = await this.prisma.activities.findMany({
+      where: { authorId },
+      select: {
+        status: true,
+        class: true,
+        hours: true,
+        activity_types: { select: { category: true } },
+      },
+    });
+
+    const byStatus: Record<Status, { count: number; hours: number }> = {
+      [Status.PENDING]: { count: 0, hours: 0 },
+      [Status.VERIFIED]: { count: 0, hours: 0 },
+      [Status.APPROVED]: { count: 0, hours: 0 },
+      [Status.REJECTED]: { count: 0, hours: 0 },
+    };
+    const approvedHoursByCategory: Record<Category, number> = {
+      [Category.ENSINO]: 0,
+      [Category.PESQUISA]: 0,
+      [Category.EXTENSAO]: 0,
+    };
+    const approvedHoursByClass: Record<ActivityClass, number> = {
+      [ActivityClass.COMPLEMENTAR]: 0,
+      [ActivityClass.LIVRE]: 0,
+    };
+
+    for (const activity of activities) {
+      const status = activity.status ?? Status.PENDING;
+      const hours = activity.hours?.toNumber() ?? 0;
+
+      byStatus[status].count += 1;
+      byStatus[status].hours += hours;
+
+      if (status === Status.APPROVED) {
+        const category = activity.activity_types?.category;
+        if (category) {
+          approvedHoursByCategory[category] += hours;
+        }
+        if (activity.class) {
+          approvedHoursByClass[activity.class] += hours;
+        }
+      }
+    }
+
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+    for (const key of Object.keys(byStatus) as Status[]) {
+      byStatus[key].hours = round2(byStatus[key].hours);
+    }
+    for (const key of Object.keys(approvedHoursByCategory) as Category[]) {
+      approvedHoursByCategory[key] = round2(approvedHoursByCategory[key]);
+    }
+    for (const key of Object.keys(approvedHoursByClass) as ActivityClass[]) {
+      approvedHoursByClass[key] = round2(approvedHoursByClass[key]);
+    }
+
+    return {
+      totalActivities: activities.length,
+      totalHoursApproved: byStatus[Status.APPROVED].hours,
+      totalHoursInReview: round2(
+        byStatus[Status.PENDING].hours + byStatus[Status.VERIFIED].hours,
+      ),
+      byStatus,
+      approvedHoursByCategory,
+      approvedHoursByClass,
     };
   }
 

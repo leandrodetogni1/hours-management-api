@@ -8,6 +8,7 @@ import {
   UpdateActivityStatusResponseDto,
 } from '../dto/ActivityResponseDto';
 import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
+import { ActivitySummaryResponseDto } from '../dto/ActivitySummaryResponseDto';
 
 @Injectable()
 export class ActivitiesService {
@@ -28,6 +29,10 @@ export class ActivitiesService {
     status?: Status,
   ): Promise<ActivityResponseDto[]> {
     return this.activityRepository.getByAuthorId(userId, status);
+  }
+
+  getSummaryByUserId(userId: string): Promise<ActivitySummaryResponseDto> {
+    return this.activityRepository.getSummaryByAuthorId(userId);
   }
 
   createActivity(

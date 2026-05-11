@@ -20,6 +20,7 @@ import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
 import { GetMyActivitiesQueryDto } from './dto/GetMyActivitiesQueryDto.js';
 import { TransitionActivityDto } from './dto/TransitionActivityDto.js';
 import { ActivityEventResponseDto } from './dto/ActivityEventResponseDto.js';
+import { ActivitySummaryResponseDto } from './dto/ActivitySummaryResponseDto.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
@@ -65,6 +66,19 @@ export class ActivitiesController {
     @Query() query: GetMyActivitiesQueryDto,
   ): Promise<ActivityResponseDto[]> {
     return this.activitiesService.getActivitiesByUserId(user.sub, query.status);
+  }
+
+  @Get('me/summary')
+  @ApiEndpoint({
+    summary:
+      'Resumo das atividades do usuário autenticado para dashboard (contagens e horas por status, categoria e classe)',
+    description: 'Resumo agregado das atividades do próprio usuário',
+    type: ActivitySummaryResponseDto,
+  })
+  findMySummary(
+    @CurrentUser() user: JwtUserPayload,
+  ): Promise<ActivitySummaryResponseDto> {
+    return this.activitiesService.getSummaryByUserId(user.sub);
   }
 
   @Post()
