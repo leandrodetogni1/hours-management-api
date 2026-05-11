@@ -13,15 +13,21 @@ import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
 export class ActivitiesService {
   constructor(private activityRepository: ActivitiesRepository) {}
 
-  getAllActivities(authorId?: string): Promise<ActivityResponseDto[]> {
+  getAllActivities(
+    authorId?: string,
+    status?: Status,
+  ): Promise<ActivityResponseDto[]> {
     if (authorId) {
-      return this.activityRepository.getByAuthorId(authorId);
+      return this.activityRepository.getByAuthorId(authorId, status);
     }
-    return this.activityRepository.getAll();
+    return this.activityRepository.getAll(status);
   }
 
-  getActivitiesByUserId(userId: string): Promise<ActivityResponseDto[]> {
-    return this.activityRepository.getByAuthorId(userId);
+  getActivitiesByUserId(
+    userId: string,
+    status?: Status,
+  ): Promise<ActivityResponseDto[]> {
+    return this.activityRepository.getByAuthorId(userId, status);
   }
 
   createActivity(

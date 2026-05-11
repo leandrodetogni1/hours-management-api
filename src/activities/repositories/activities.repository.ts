@@ -46,17 +46,21 @@ const activityInclude = {
 export class ActivitiesRepository {
   constructor(private prisma: PrismaService) {}
 
-  async getAll(): Promise<ActivityResponseDto[]> {
+  async getAll(status?: Status): Promise<ActivityResponseDto[]> {
     const activities = await this.prisma.activities.findMany({
+      where: status ? { status } : undefined,
       include: activityInclude,
       orderBy: { createdAt: 'desc' },
     });
     return activities.map((a) => ActivityMapper.toResponseDto(a));
   }
 
-  async getByAuthorId(authorId: string): Promise<ActivityResponseDto[]> {
+  async getByAuthorId(
+    authorId: string,
+    status?: Status,
+  ): Promise<ActivityResponseDto[]> {
     const activities = await this.prisma.activities.findMany({
-      where: { authorId },
+      where: { authorId, ...(status && { status }) },
       include: activityInclude,
       orderBy: { createdAt: 'desc' },
     });

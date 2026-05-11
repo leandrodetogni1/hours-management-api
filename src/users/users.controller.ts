@@ -19,6 +19,7 @@ import {
   UserResponseDto,
 } from './dto/UserResponseDto.js';
 import { ActivityResponseDto } from '../activities/dto/ActivityResponseDto.js';
+import { GetMyActivitiesQueryDto } from '../activities/dto/GetMyActivitiesQueryDto.js';
 import { GetUsersQueryDto } from './dto/GetUsersQueryDto.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
 
@@ -83,7 +84,7 @@ export class UsersController {
 
   @Get(':userId/activities')
   @ApiEndpoint({
-    summary: 'Listar atividades de um usuário',
+    summary: 'Listar atividades de um usuário (filtro opcional por status)',
     description: 'Lista de atividades do usuário',
     type: ActivityResponseDto,
     isArray: true,
@@ -91,8 +92,9 @@ export class UsersController {
   })
   getUserActivities(
     @Param('userId') userId: string,
+    @Query() query: GetMyActivitiesQueryDto,
   ): Promise<ActivityResponseDto[]> {
-    return this.usersService.getUserActivities(userId);
+    return this.usersService.getUserActivities(userId, query.status);
   }
 
   @Delete(':id')

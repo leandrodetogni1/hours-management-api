@@ -17,6 +17,7 @@ import {
   UpdateActivityStatusResponseDto,
 } from './dto/ActivityResponseDto.js';
 import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
+import { GetMyActivitiesQueryDto } from './dto/GetMyActivitiesQueryDto.js';
 import { TransitionActivityDto } from './dto/TransitionActivityDto.js';
 import { ActivityEventResponseDto } from './dto/ActivityEventResponseDto.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -36,7 +37,7 @@ export class ActivitiesController {
   @Get()
   @ApiEndpoint({
     summary:
-      'Listar atividades — owner/admin/reviewer apenas (filtro opcional por authorId)',
+      'Listar atividades — owner/admin/reviewer apenas (filtros opcionais: authorId, status)',
     description: 'Lista de atividades',
     type: ActivityResponseDto,
     isArray: true,
@@ -45,20 +46,25 @@ export class ActivitiesController {
   findAll(
     @Query() query: GetActivitiesQueryDto,
   ): Promise<ActivityResponseDto[]> {
-    return this.activitiesService.getAllActivities(query.authorId);
+    return this.activitiesService.getAllActivities(
+      query.authorId,
+      query.status,
+    );
   }
 
   @Get('me')
   @ApiEndpoint({
-    summary: 'Listar as atividades do usuário autenticado',
+    summary:
+      'Listar as atividades do usuário autenticado (filtro opcional por status)',
     description: 'Lista de atividades do próprio usuário',
     type: ActivityResponseDto,
     isArray: true,
   })
   findMine(
     @CurrentUser() user: JwtUserPayload,
+    @Query() query: GetMyActivitiesQueryDto,
   ): Promise<ActivityResponseDto[]> {
-    return this.activitiesService.getActivitiesByUserId(user.sub);
+    return this.activitiesService.getActivitiesByUserId(user.sub, query.status);
   }
 
   @Post()

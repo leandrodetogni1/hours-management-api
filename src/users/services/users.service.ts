@@ -6,6 +6,7 @@ import { UpdateUserDto } from '../dto/UpdateUserDto';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { ActivityResponseDto } from '../../activities/dto/ActivityResponseDto';
 import { UserSituation } from '../../enums/UserSituation';
+import { Status } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -38,11 +39,14 @@ export class UsersService {
     return this.usersRepository.deleteUser(id);
   }
 
-  async getUserActivities(userId: string): Promise<ActivityResponseDto[]> {
+  async getUserActivities(
+    userId: string,
+    status?: Status,
+  ): Promise<ActivityResponseDto[]> {
     const user = await this.usersRepository.findById(userId);
     if (!user) {
       throw new NotFoundException(`User with id ${userId} not found`);
     }
-    return this.activitiesService.getActivitiesByUserId(userId);
+    return this.activitiesService.getActivitiesByUserId(userId, status);
   }
 }
