@@ -146,7 +146,7 @@ export class DashboardRepository {
       activitiesApprovedLast30Days,
       totalActivitiesPending,
     ] = await Promise.all([
-      this.prisma.users.count(),
+      this.prisma.users.count({ where: { role: { name: 'member' } } }),
       this.prisma.users.count({
         where: {
           situation: UserSituation.FORMANDO,

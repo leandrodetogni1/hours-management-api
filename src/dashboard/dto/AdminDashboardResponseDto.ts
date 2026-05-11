@@ -177,10 +177,17 @@ export class ReviewQueueDto {
 }
 
 export class SystemStatsDto {
-  @ApiProperty({ example: 87 })
+  @ApiProperty({
+    example: 87,
+    description:
+      'Total de alunos (apenas usuários com role member). Não inclui owner/admin/reviewer.',
+  })
   totalUsers: number;
 
-  @ApiProperty({ example: 12 })
+  @ApiProperty({
+    example: 12,
+    description: 'Total de alunos (members) com situation FORMANDO.',
+  })
   totalFormandos: number;
 
   @ApiProperty({ example: 45 })
