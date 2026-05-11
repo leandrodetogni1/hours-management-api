@@ -268,6 +268,14 @@ export class ActivitiesRepository {
     };
   }
 
+  async findOwnerId(activityId: string): Promise<string | null> {
+    const activity = await this.prisma.activities.findUnique({
+      where: { id: activityId },
+      select: { authorId: true },
+    });
+    return activity?.authorId ?? null;
+  }
+
   async getEvents(activityId: string): Promise<ActivityEventResponseDto[]> {
     const activity = await this.prisma.activities.findUnique({
       where: { id: activityId },

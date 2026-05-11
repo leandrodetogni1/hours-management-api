@@ -104,18 +104,25 @@ export class ActivitiesController {
   @Get(':id/events')
   @ApiEndpoint({
     summary:
-      'Listar eventos (timeline) de uma atividade — owner/admin/reviewer apenas',
+      'Listar eventos (timeline) de uma atividade — dono da atividade ou owner/admin/reviewer',
     description: 'Lista de eventos',
     type: ActivityEventResponseDto,
     isArray: true,
     params: [ID_PARAM],
-    roles: PRIVILEGED_ROLES,
-    errors: [{ status: 404, description: 'Atividade não encontrada' }],
+    errors: [
+      {
+        status: 403,
+        description:
+          'Acesso negado (apenas o dono da atividade ou owner/admin/reviewer)',
+      },
+      { status: 404, description: 'Atividade não encontrada' },
+    ],
   })
   getActivityEvents(
+    @CurrentUser() user: JwtUserPayload,
     @Param('id') id: string,
   ): Promise<ActivityEventResponseDto[]> {
-    return this.activitiesService.getActivityEvents(id);
+    return this.activitiesService.getActivityEvents(id, user);
   }
 
   @Patch(':id/approve')

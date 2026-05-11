@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Status } from '@prisma/client';
 import { ActivitiesRepository } from '../repositories/activities.repository';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
@@ -9,6 +13,9 @@ import {
 } from '../dto/ActivityResponseDto';
 import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
 import { ActivitySummaryResponseDto } from '../dto/ActivitySummaryResponseDto';
+import { JwtUserPayload } from '../../auth/decorators/current-user.decorator';
+
+const EVENTS_PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'] as const;
 
 @Injectable()
 export class ActivitiesService {
@@ -81,7 +88,25 @@ export class ActivitiesService {
     );
   }
 
-  getActivityEvents(activityId: string): Promise<ActivityEventResponseDto[]> {
+  async getActivityEvents(
+    activityId: string,
+    currentUser: JwtUserPayload,
+  ): Promise<ActivityEventResponseDto[]> {
+    const authorId = await this.activityRepository.findOwnerId(activityId);
+    if (!authorId) {
+      throw new NotFoundException(`Activity with id ${activityId} not found`);
+    }
+
+    const isPrivileged =
+      typeof currentUser.role === 'string' &&
+      (EVENTS_PRIVILEGED_ROLES as readonly string[]).includes(currentUser.role);
+
+    if (!isPrivileged && currentUser.sub !== authorId) {
+      throw new ForbiddenException(
+        'Acesso negado. Apenas o dono da atividade ou owner/admin/reviewer',
+      );
+    }
+
     return this.activityRepository.getEvents(activityId);
   }
 }
