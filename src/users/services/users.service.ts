@@ -22,6 +22,7 @@ const SELF_EDITABLE_FIELDS = [
   'course',
   'curriculumYear',
   'situation',
+  'picture',
 ] as const;
 
 @Injectable()

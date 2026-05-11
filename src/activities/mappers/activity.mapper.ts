@@ -21,6 +21,7 @@ export class ActivityMapper {
       firstName: string;
       lastName: string;
       email: string;
+      picture: string | null;
     } | null;
     activity_types: {
       id: string;

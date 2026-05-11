@@ -13,6 +13,7 @@ export class UserMapper {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      picture: user.picture ?? null,
       role: user.role.name,
       matricula: user.matricula ?? null,
       situation: (user.situation as UserSituation) ?? null,
@@ -28,6 +29,7 @@ export class UserMapper {
     email: string;
     firstName: string;
     lastName: string;
+    picture: string | null;
     role: { name: string };
     matricula: string | null;
     situation: UserSituation | null;
@@ -39,6 +41,7 @@ export class UserMapper {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      picture: user.picture ?? null,
       role: user.role.name,
       matricula: user.matricula ?? null,
       situation: user.situation ?? null,

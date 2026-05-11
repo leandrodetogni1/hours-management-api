@@ -1,6 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
-import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 import { CurriculumYear } from '../../enums/CurriculumYear.js';
 import { UserCourse } from '../../enums/UserCourse.js';
 import { UserSituation } from '../../enums/UserSituation.js';
@@ -86,4 +93,17 @@ export class UpdateUserDto {
     message: 'Currículo inválido. Use: Y2012, Y2013 ou Y2015',
   })
   curriculumYear?: CurriculumYear;
+
+  @ApiPropertyOptional({
+    example: 'https://lh3.googleusercontent.com/a/ACg8oc...',
+    description:
+      'URL da foto de perfil (até 500 caracteres). Sobrescreve a foto importada do Google.',
+    maxLength: 500,
+  })
+  @Expose()
+  @IsOptional()
+  @IsString({ message: 'picture deve ser uma string' })
+  @MaxLength(500, { message: 'picture deve ter no máximo 500 caracteres' })
+  @IsUrl({}, { message: 'picture deve ser uma URL válida' })
+  picture?: string;
 }

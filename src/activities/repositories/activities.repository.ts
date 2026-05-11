@@ -32,6 +32,7 @@ const activityInclude = {
       firstName: true,
       lastName: true,
       email: true,
+      picture: true,
     },
   },
   activity_types: {
@@ -296,6 +297,7 @@ export class ActivitiesRepository {
             firstName: true,
             lastName: true,
             email: true,
+            picture: true,
           },
         },
       },

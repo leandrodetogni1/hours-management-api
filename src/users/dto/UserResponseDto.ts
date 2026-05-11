@@ -16,6 +16,12 @@ export class UserSummaryDto {
   @ApiProperty({ example: 'Silva' })
   lastName: string;
 
+  @ApiPropertyOptional({
+    example: 'https://lh3.googleusercontent.com/a/ACg8oc...',
+    description: 'URL da foto de perfil (do Google ou definida pelo aluno)',
+  })
+  picture: string | null;
+
   @ApiProperty({
     example: 'MEMBER',
     enum: ['owner', 'admin', 'reviewer', 'member'],

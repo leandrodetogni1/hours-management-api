@@ -7,6 +7,7 @@ export interface StudentWithActivities {
   firstName: string;
   lastName: string;
   email: string;
+  picture: string | null;
   matricula: string | null;
   situation: UserSituation | null;
   course: import('@prisma/client').Course | null;
@@ -64,6 +65,7 @@ export class DashboardRepository {
         firstName: true,
         lastName: true,
         email: true,
+        picture: true,
         matricula: true,
         situation: true,
         course: true,

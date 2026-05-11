@@ -74,6 +74,7 @@ export class UsersRepository {
           email: true,
           firstName: true,
           lastName: true,
+          picture: true,
           matricula: true,
           situation: true,
           course: true,
@@ -129,6 +130,7 @@ export class UsersRepository {
           ...(data.curriculumYear !== undefined && {
             curriculumYear: data.curriculumYear,
           }),
+          ...(data.picture !== undefined && { picture: data.picture }),
           updatedAt: new Date(),
         },
         include: { role: true },

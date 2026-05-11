@@ -13,6 +13,11 @@ export class ActivityUserSummaryDto {
 
   @ApiProperty({ example: 'joao@ufpel.edu.br' })
   email: string;
+
+  @ApiPropertyOptional({
+    example: 'https://lh3.googleusercontent.com/a/ACg8oc...',
+  })
+  picture: string | null;
 }
 
 export class ActivityResponseDto {

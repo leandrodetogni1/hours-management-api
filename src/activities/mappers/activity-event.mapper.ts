@@ -14,6 +14,7 @@ export class ActivityEventMapper {
       firstName: string;
       lastName: string;
       email: string;
+      picture: string | null;
     } | null;
   }): ActivityEventResponseDto {
     return {
