@@ -9,6 +9,7 @@ import { CreateUserDto } from '../dto/CreateUserDto';
 import { UpdateUserDto } from '../dto/UpdateUserDto';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { ActivityResponseDto } from '../../activities/dto/ActivityResponseDto';
+import { UserCourse } from '../../enums/UserCourse';
 import { UserSituation } from '../../enums/UserSituation';
 import { FilterableRole } from '../dto/GetUsersQueryDto';
 import { JwtUserPayload } from '../../auth/decorators/current-user.decorator';
@@ -33,8 +34,9 @@ export class UsersService {
   getAllUsers(
     situation?: UserSituation,
     role?: FilterableRole,
+    course?: UserCourse,
   ): Promise<UserResponseDto[]> {
-    return this.usersRepository.getAll(situation, role);
+    return this.usersRepository.getAll(situation, role, course);
   }
 
   async getUserById(id: string): Promise<UserResponseDto> {

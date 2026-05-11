@@ -38,14 +38,18 @@ export class UsersController {
   @Get()
   @ApiEndpoint({
     summary:
-      'Listar todos os usuários — owner/admin/reviewer apenas (filtros opcionais por situação e role)',
+      'Listar todos os usuários — owner/admin/reviewer apenas (filtros opcionais por situação, role e curso)',
     description: 'Lista de usuários',
     type: UserResponseDto,
     isArray: true,
     roles: PRIVILEGED_ROLES,
   })
   findAll(@Query() query: GetUsersQueryDto): Promise<UserResponseDto[]> {
-    return this.usersService.getAllUsers(query.situation, query.role);
+    return this.usersService.getAllUsers(
+      query.situation,
+      query.role,
+      query.course,
+    );
   }
 
   @Get(':id')

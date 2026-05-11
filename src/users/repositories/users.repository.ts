@@ -34,10 +34,12 @@ export class UsersRepository {
   async getAll(
     situation?: UserSituation,
     role?: FilterableRole,
+    course?: UserCourse,
   ): Promise<UserResponseDto[]> {
     const where: Prisma.usersWhereInput = {
       ...(situation && { situation }),
       ...(role && { role: { name: role } }),
+      ...(course && { course }),
     };
     const users = await this.prisma.users.findMany({
       where,

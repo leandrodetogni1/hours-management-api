@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEnum, IsIn, IsOptional, IsString } from 'class-validator';
+import { UserCourse } from '../../enums/UserCourse.js';
 import { UserSituation } from '../../enums/UserSituation.js';
 
 export const FILTERABLE_ROLES = [
@@ -38,4 +39,19 @@ export class GetUsersQueryDto {
     message: 'Role inválida. Use: owner, admin, reviewer ou member',
   })
   role?: FilterableRole;
+
+  @ApiPropertyOptional({
+    example: 'CIENCIA_DA_COMPUTACAO',
+    enum: UserCourse,
+    description: 'Filtrar usuários por curso',
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @IsEnum(UserCourse, {
+    message:
+      'Curso inválido. Use: CIENCIA_DA_COMPUTACAO ou ENGENHARIA_DA_COMPUTACAO',
+  })
+  course?: UserCourse;
 }
