@@ -25,6 +25,7 @@ import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
 
 const ID_PARAM = { name: 'id', description: 'UUID do usuário' };
 const ADMIN_ROLES = ['admin'];
+const PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'];
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -84,11 +85,13 @@ export class UsersController {
 
   @Get(':userId/activities')
   @ApiEndpoint({
-    summary: 'Listar atividades de um usuário (filtro opcional por status)',
+    summary:
+      'Listar atividades de um usuário — owner/admin/reviewer apenas (filtro opcional por status)',
     description: 'Lista de atividades do usuário',
     type: ActivityResponseDto,
     isArray: true,
     params: [{ name: 'userId', description: 'UUID do usuário' }],
+    roles: PRIVILEGED_ROLES,
   })
   getUserActivities(
     @Param('userId') userId: string,
