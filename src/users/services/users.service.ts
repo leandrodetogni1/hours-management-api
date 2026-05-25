@@ -9,6 +9,7 @@ import { CreateUserDto } from '../dto/CreateUserDto';
 import { UpdateUserDto } from '../dto/UpdateUserDto';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { ActivityResponseDto } from '../../activities/dto/ActivityResponseDto';
+import { ActivitySummaryResponseDto } from '../../activities/dto/ActivitySummaryResponseDto';
 import { UserCourse } from '../../enums/UserCourse';
 import { UserSituation } from '../../enums/UserSituation';
 import { FilterableRole } from '../dto/GetUsersQueryDto';
@@ -95,5 +96,15 @@ export class UsersService {
       throw new NotFoundException(`User with id ${userId} not found`);
     }
     return this.activitiesService.getActivitiesByUserId(userId, status);
+  }
+
+  async getUserActivitiesSummary(
+    userId: string,
+  ): Promise<ActivitySummaryResponseDto> {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+    return this.activitiesService.getSummaryByUserId(userId);
   }
 }

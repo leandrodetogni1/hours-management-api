@@ -19,6 +19,7 @@ import {
   UserResponseDto,
 } from './dto/UserResponseDto.js';
 import { ActivityResponseDto } from '../activities/dto/ActivityResponseDto.js';
+import { ActivitySummaryResponseDto } from '../activities/dto/ActivitySummaryResponseDto.js';
 import { GetMyActivitiesQueryDto } from '../activities/dto/GetMyActivitiesQueryDto.js';
 import { GetUsersQueryDto } from './dto/GetUsersQueryDto.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
@@ -110,6 +111,21 @@ export class UsersController {
     @Query() query: GetMyActivitiesQueryDto,
   ): Promise<ActivityResponseDto[]> {
     return this.usersService.getUserActivities(userId, query.status);
+  }
+
+  @Get(':userId/activities/summary')
+  @ApiEndpoint({
+    summary:
+      'Resumo das atividades de um usuário (contagens e horas por status, categoria e classe) — próprio usuário ou owner/admin/reviewer',
+    description: 'Resumo agregado das atividades do usuário',
+    type: ActivitySummaryResponseDto,
+    params: [{ name: 'userId', description: 'UUID do usuário' }],
+    selfOrRoles: { roles: PRIVILEGED_ROLES, param: 'userId' },
+  })
+  getUserActivitiesSummary(
+    @Param('userId') userId: string,
+  ): Promise<ActivitySummaryResponseDto> {
+    return this.usersService.getUserActivitiesSummary(userId);
   }
 
   @Delete(':id')
