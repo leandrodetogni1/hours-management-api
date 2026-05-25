@@ -84,7 +84,7 @@ export class CreateUserDto {
   @Expose()
   @IsOptional()
   @IsEnum(CurriculumYear, {
-    message: 'Currículo inválido. Use: Y2012, Y2013 ou Y2015',
+    message: 'Currículo inválido. Use: Y2015',
   })
   curriculumYear?: CurriculumYear;
 }

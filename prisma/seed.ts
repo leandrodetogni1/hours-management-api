@@ -159,11 +159,7 @@ async function main() {
     year: CurriculumYear;
     maxHoursTotal: number;
   }> = [
-    { cod: 'C', year: CurriculumYear.Y2012, maxHoursTotal: 102 },
-    { cod: 'C', year: CurriculumYear.Y2013, maxHoursTotal: 102 },
     { cod: 'C', year: CurriculumYear.Y2015, maxHoursTotal: 153 },
-    { cod: 'D', year: CurriculumYear.Y2012, maxHoursTotal: 102 },
-    { cod: 'D', year: CurriculumYear.Y2013, maxHoursTotal: 102 },
     { cod: 'D', year: CurriculumYear.Y2015, maxHoursTotal: 153 },
   ];
 

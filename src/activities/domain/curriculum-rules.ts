@@ -10,24 +10,6 @@ export interface CurriculumRules {
 }
 
 export const CURRICULUM_RULES: Record<CurriculumYear, CurriculumRules> = {
-  Y2012: {
-    minHoursPerCategory: null,
-    minCategoriesRequired: null,
-    totalMinByCourse: {},
-    totalMaxByCourse: {
-      [Course.ENGENHARIA_DA_COMPUTACAO]: 340,
-    },
-    excessToFreeMultiplier: 1,
-    minFreeHours: 217,
-  },
-  Y2013: {
-    minHoursPerCategory: 100,
-    minCategoriesRequired: 3,
-    totalMinByCourse: {},
-    totalMaxByCourse: {},
-    excessToFreeMultiplier: 5 / 6,
-    minFreeHours: 217,
-  },
   Y2015: {
     minHoursPerCategory: 120,
     minCategoriesRequired: 2,
