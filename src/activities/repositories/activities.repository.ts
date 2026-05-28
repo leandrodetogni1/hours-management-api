@@ -2,11 +2,12 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
 import { UpdateActivityDto } from '../dto/UpdateActivityDto';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { Prisma, Status } from '@prisma/client';
+import { CurriculumYear, Prisma, Status } from '@prisma/client';
 import {
   ActivityResponseDto,
   CreateActivityResponseDto,
@@ -18,6 +19,7 @@ import { ActivityEventMapper } from '../mappers/activity-event.mapper';
 import { ActivitySummaryResponseDto } from '../dto/ActivitySummaryResponseDto';
 import { calculateHoursEquivalent } from '../domain/hours-calculator.js';
 import { calculateActivityProgress } from '../domain/progress-calculator.js';
+import { CurriculaRepository } from '../../curricula/repositories/curricula.repository.js';
 
 const allowedSourceStatuses: Record<Status, Status[]> = {
   [Status.PENDING]: [],
@@ -49,7 +51,10 @@ const activityInclude = {
 
 @Injectable()
 export class ActivitiesRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private curriculaRepository: CurriculaRepository,
+  ) {}
 
   async getAll(status?: Status): Promise<ActivityResponseDto[]> {
     const activities = await this.prisma.activities.findMany({
@@ -78,14 +83,8 @@ export class ActivitiesRepository {
   ): Promise<CreateActivityResponseDto> {
     const activityType = await this.prisma.activity_types.findUnique({
       where: { id: dto.activityTypeId },
-      select: {
-        id: true,
-        cod: true,
-        unity: true,
-        maxHoursPerCertificateOrSemester: true,
-      },
+      select: { id: true, cod: true, unity: true },
     });
-
     if (!activityType) {
       throw new NotFoundException(
         `Activity type with id ${dto.activityTypeId} not found`,
@@ -94,12 +93,18 @@ export class ActivitiesRepository {
 
     const author = await this.prisma.users.findUnique({
       where: { id: authorId },
-      select: { id: true },
+      select: { id: true, curriculumYear: true },
     });
-
     if (!author) {
       throw new NotFoundException(`User with id ${authorId} not found`);
     }
+
+    const maxHoursPerCertificateOrSemester =
+      await this.resolveMaxHoursPerCertificateOrSemester(
+        author.curriculumYear,
+        activityType.id,
+        activityType.cod,
+      );
 
     const hoursEquivalent = calculateHoursEquivalent(
       {
@@ -111,8 +116,7 @@ export class ActivitiesRepository {
       {
         cod: activityType.cod,
         unity: activityType.unity,
-        maxHoursPerCertificateOrSemester:
-          activityType.maxHoursPerCertificateOrSemester,
+        maxHoursPerCertificateOrSemester,
       },
     );
 
@@ -217,6 +221,7 @@ export class ActivitiesRepository {
         hours: true,
         startDate: true,
         endDate: true,
+        authorId: true,
       },
     });
 
@@ -264,17 +269,29 @@ export class ActivitiesRepository {
 
     const activityType = await this.prisma.activity_types.findUnique({
       where: { id: mergedActivityTypeId },
-      select: {
-        cod: true,
-        unity: true,
-        maxHoursPerCertificateOrSemester: true,
-      },
+      select: { id: true, cod: true, unity: true },
     });
     if (!activityType) {
       throw new NotFoundException(
         `Activity type with id ${mergedActivityTypeId} not found`,
       );
     }
+
+    let authorCurriculumYear: CurriculumYear | null = null;
+    if (existing.authorId) {
+      const author = await this.prisma.users.findUnique({
+        where: { id: existing.authorId },
+        select: { curriculumYear: true },
+      });
+      authorCurriculumYear = author?.curriculumYear ?? null;
+    }
+
+    const maxHoursPerCertificateOrSemester =
+      await this.resolveMaxHoursPerCertificateOrSemester(
+        authorCurriculumYear,
+        activityType.id,
+        activityType.cod,
+      );
 
     const mergedClass = dto.class ?? existing.class;
     const mergedHours =
@@ -292,8 +309,7 @@ export class ActivitiesRepository {
       {
         cod: activityType.cod,
         unity: activityType.unity,
-        maxHoursPerCertificateOrSemester:
-          activityType.maxHoursPerCertificateOrSemester,
+        maxHoursPerCertificateOrSemester,
       },
     );
 
@@ -350,6 +366,10 @@ export class ActivitiesRepository {
       select: { curriculumYear: true, course: true },
     });
 
+    const curriculumRules = author?.curriculumYear
+      ? await this.curriculaRepository.findRulesByYear(author.curriculumYear)
+      : null;
+
     const activities = await this.prisma.activities.findMany({
       where: { authorId },
       select: {
@@ -362,7 +382,6 @@ export class ActivitiesRepository {
             cod: true,
             label: true,
             category: true,
-            maxHoursInComplementarActivities: true,
             curriculumRules: {
               select: { curriculumYear: true, maxHoursTotal: true },
             },
@@ -372,7 +391,7 @@ export class ActivitiesRepository {
     });
 
     const progress = calculateActivityProgress({
-      curriculumYear: author?.curriculumYear ?? null,
+      curriculumRules,
       course: author?.course ?? null,
       activities: activities.map((a) => ({
         status: a.status,
@@ -384,8 +403,6 @@ export class ActivitiesRepository {
               cod: a.activity_types.cod,
               label: a.activity_types.label,
               category: a.activity_types.category,
-              maxHoursInComplementarActivities:
-                a.activity_types.maxHoursInComplementarActivities,
               curriculumRules: a.activity_types.curriculumRules,
             }
           : null,
@@ -445,5 +462,29 @@ export class ActivitiesRepository {
     });
 
     return events.map((e) => ActivityEventMapper.toResponseDto(e));
+  }
+
+  private async resolveMaxHoursPerCertificateOrSemester(
+    curriculumYear: CurriculumYear | null,
+    activityTypeId: string,
+    cod: string,
+  ): Promise<number> {
+    if (!curriculumYear) {
+      throw new UnprocessableEntityException(
+        'Usuário não possui currículo definido. Contate o administrador.',
+      );
+    }
+
+    const rule = await this.curriculaRepository.findActivityTypeRule(
+      curriculumYear,
+      activityTypeId,
+    );
+    if (!rule) {
+      throw new UnprocessableEntityException(
+        `Tipo de atividade '${cod}' não possui regras configuradas para o currículo ${curriculumYear}. Contate o administrador.`,
+      );
+    }
+
+    return rule.maxHoursPerCertificateOrSemester;
   }
 }

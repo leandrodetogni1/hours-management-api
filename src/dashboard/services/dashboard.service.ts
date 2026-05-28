@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Category, UserSituation } from '@prisma/client';
+import { Category, CurriculumYear, UserSituation } from '@prisma/client';
 import {
   DashboardRepository,
   StudentWithActivities,
@@ -15,6 +15,8 @@ import {
   CategoryProgress,
   ProgressActivity,
 } from '../../activities/domain/progress-calculator.js';
+import { CurriculumRules } from '../../activities/domain/curriculum-rules.js';
+import { CurriculaRepository } from '../../curricula/repositories/curricula.repository.js';
 
 const CATEGORY_LABELS_PT: Record<Category, string> = {
   [Category.ENSINO]: 'Ensino',
@@ -24,7 +26,10 @@ const CATEGORY_LABELS_PT: Record<Category, string> = {
 
 @Injectable()
 export class DashboardService {
-  constructor(private dashboardRepository: DashboardRepository) {}
+  constructor(
+    private dashboardRepository: DashboardRepository,
+    private curriculaRepository: CurriculaRepository,
+  ) {}
 
   async getAdminDashboard(): Promise<AdminDashboardResponseDto> {
     const [students, reviewQueue, systemStats] = await Promise.all([
@@ -36,14 +41,27 @@ export class DashboardService {
       this.dashboardRepository.getSystemStats(),
     ]);
 
+    const curriculumRulesByYear =
+      await this.loadCurriculumRulesForStudents(students);
+
     const formandosAtRisk = students
       .filter((s) => s.situation === UserSituation.FORMANDO)
-      .map((s) => this.buildFormandoAtRisk(s))
+      .map((s) =>
+        this.buildFormandoAtRisk(
+          s,
+          this.lookupRules(curriculumRulesByYear, s.curriculumYear),
+        ),
+      )
       .sort((a, b) => b.totalGap - a.totalGap);
 
     const regularStudentsProgress = students
       .filter((s) => s.situation === UserSituation.REGULAR)
-      .map((s) => this.buildRegularStudentProgress(s))
+      .map((s) =>
+        this.buildRegularStudentProgress(
+          s,
+          this.lookupRules(curriculumRulesByYear, s.curriculumYear),
+        ),
+      )
       .sort((a, b) => b.totalHoursApproved - a.totalHoursApproved);
 
     const now = Date.now();
@@ -75,11 +93,35 @@ export class DashboardService {
     };
   }
 
+  private async loadCurriculumRulesForStudents(
+    students: StudentWithActivities[],
+  ): Promise<Map<CurriculumYear, CurriculumRules>> {
+    const years = new Set<CurriculumYear>();
+    for (const s of students) {
+      if (s.curriculumYear) years.add(s.curriculumYear);
+    }
+    const entries: Array<[CurriculumYear, CurriculumRules]> = [];
+    for (const year of years) {
+      const rules = await this.curriculaRepository.findRulesByYear(year);
+      if (rules) entries.push([year, rules]);
+    }
+    return new Map(entries);
+  }
+
+  private lookupRules(
+    map: Map<CurriculumYear, CurriculumRules>,
+    year: CurriculumYear | null,
+  ): CurriculumRules | null {
+    if (!year) return null;
+    return map.get(year) ?? null;
+  }
+
   private buildFormandoAtRisk(
     formando: StudentWithActivities,
+    curriculumRules: CurriculumRules | null,
   ): FormandoAtRiskDto {
     const progress = calculateActivityProgress({
-      curriculumYear: formando.curriculumYear,
+      curriculumRules,
       course: formando.course,
       activities: formando.activities.map(toProgressActivity),
     });
@@ -144,9 +186,10 @@ export class DashboardService {
 
   private buildRegularStudentProgress(
     student: StudentWithActivities,
+    curriculumRules: CurriculumRules | null,
   ): RegularStudentProgressDto {
     const progress = calculateActivityProgress({
-      curriculumYear: student.curriculumYear,
+      curriculumRules,
       course: student.course,
       activities: student.activities.map(toProgressActivity),
     });
@@ -187,8 +230,6 @@ function toProgressActivity(
           cod: a.activity_types.cod,
           label: a.activity_types.label,
           category: a.activity_types.category,
-          maxHoursInComplementarActivities:
-            a.activity_types.maxHoursInComplementarActivities,
           curriculumRules: a.activity_types.curriculumRules,
         }
       : null,
