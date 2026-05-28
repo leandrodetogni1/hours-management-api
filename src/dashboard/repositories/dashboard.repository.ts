@@ -21,7 +21,6 @@ export interface StudentWithActivities {
       cod: string;
       label: string;
       category: import('@prisma/client').Category | null;
-      maxHoursInComplementarActivities: number | null;
       curriculumRules: Array<{
         curriculumYear: import('@prisma/client').CurriculumYear;
         maxHoursTotal: number;
@@ -84,7 +83,6 @@ export class DashboardRepository {
                 cod: true,
                 label: true,
                 category: true,
-                maxHoursInComplementarActivities: true,
                 curriculumRules: {
                   select: { curriculumYear: true, maxHoursTotal: true },
                 },

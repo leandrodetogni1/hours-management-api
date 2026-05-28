@@ -5,8 +5,6 @@ export class ActivityTypeMapper {
     id: string;
     cod: string;
     label: string;
-    maxHoursInComplementarActivities: number | null;
-    maxHoursPerCertificateOrSemester: number | null;
     category: string | null;
     unity: string | null;
   }): ActivityTypeResponseDto {
@@ -14,10 +12,6 @@ export class ActivityTypeMapper {
       id: activityType.id,
       cod: activityType.cod,
       label: activityType.label,
-      maxHoursInComplementarActivities:
-        activityType.maxHoursInComplementarActivities,
-      maxHoursPerCertificateOrSemester:
-        activityType.maxHoursPerCertificateOrSemester,
       category: activityType.category,
       unity: activityType.unity,
     };

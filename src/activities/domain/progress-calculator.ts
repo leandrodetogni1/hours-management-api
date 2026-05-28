@@ -5,14 +5,13 @@ import {
   CurriculumYear,
   Status,
 } from '@prisma/client';
-import { CURRICULUM_RULES, resolveMaxHoursTotal } from './curriculum-rules.js';
+import { CurriculumRules } from './curriculum-rules.js';
 
 export interface ProgressActivityType {
   id: string;
   cod: string;
   label: string;
   category: Category | null;
-  maxHoursInComplementarActivities: number | null;
   curriculumRules: Array<{
     curriculumYear: CurriculumYear;
     maxHoursTotal: number;
@@ -27,7 +26,7 @@ export interface ProgressActivity {
 }
 
 export interface ProgressInput {
-  curriculumYear: CurriculumYear | null;
+  curriculumRules: CurriculumRules | null;
   course: Course | null;
   activities: ProgressActivity[];
 }
@@ -82,6 +81,8 @@ const CATEGORIES: Category[] = [
   Category.EXTENSAO,
 ];
 
+const DEFAULT_MIN_FREE_HOURS = 217;
+
 export function calculateActivityProgress(
   input: ProgressInput,
 ): ActivityProgress {
@@ -100,6 +101,8 @@ export function calculateActivityProgress(
     [ActivityClass.COMPLEMENTAR]: 0,
     [ActivityClass.LIVRE]: 0,
   };
+
+  const curriculumYear = input.curriculumRules?.curriculumYear ?? null;
 
   type TypeAgg = {
     cod: string;
@@ -133,8 +136,7 @@ export function calculateActivityProgress(
           label: type.label,
           approvedHours: hours,
           maxHoursTotal: resolveMaxHoursTotal(
-            type.maxHoursInComplementarActivities,
-            input.curriculumYear,
+            curriculumYear,
             type.curriculumRules,
           ),
         });
@@ -152,9 +154,11 @@ export function calculateActivityProgress(
     approvedHoursByClass[key] = round2(approvedHoursByClass[key]);
   }
 
-  const rules = input.curriculumYear
-    ? CURRICULUM_RULES[input.curriculumYear]
-    : null;
+  const rules = input.curriculumRules;
+  const courseRule =
+    rules && input.course
+      ? (rules.courseRules.find((r) => r.course === input.course) ?? null)
+      : null;
 
   const categoryProgress: CategoryProgress[] = CATEGORIES.map((category) => {
     const hoursAchieved = approvedHoursByCategory[category];
@@ -168,14 +172,8 @@ export function calculateActivityProgress(
   });
 
   const totalRawComp = approvedHoursByClass[ActivityClass.COMPLEMENTAR];
-  const minRequired =
-    rules && input.course
-      ? (rules.totalMinByCourse[input.course] ?? null)
-      : null;
-  const maxAccepted =
-    rules && input.course
-      ? (rules.totalMaxByCourse[input.course] ?? null)
-      : null;
+  const minRequired = courseRule?.totalMin ?? null;
+  const maxAccepted = courseRule?.totalMax ?? null;
   const totalCountedComp =
     maxAccepted !== null ? Math.min(totalRawComp, maxAccepted) : totalRawComp;
 
@@ -192,7 +190,7 @@ export function calculateActivityProgress(
     : 0;
   const loggedFree = approvedHoursByClass[ActivityClass.LIVRE];
   const totalFree = round2(loggedFree + carriedOver);
-  const minFree = rules?.minFreeHours ?? 217;
+  const minFree = rules?.minFreeHours ?? DEFAULT_MIN_FREE_HOURS;
   const freeMeetsMinimum = totalFree >= minFree;
 
   const cappedTypes: CappedType[] = [];
@@ -237,9 +235,23 @@ export function calculateActivityProgress(
   };
 }
 
+function resolveMaxHoursTotal(
+  curriculumYear: CurriculumYear | null,
+  curriculumRules: Array<{
+    curriculumYear: CurriculumYear;
+    maxHoursTotal: number;
+  }>,
+): number | null {
+  if (!curriculumYear) return null;
+  const match = curriculumRules.find(
+    (r) => r.curriculumYear === curriculumYear,
+  );
+  return match ? match.maxHoursTotal : null;
+}
+
 function checkCategoryRule(
   progress: CategoryProgress[],
-  required: 2 | 3 | null,
+  required: number | null,
 ): boolean {
   if (required === null) return true;
   const passing = progress.filter((p) => p.meetsMinimum).length;

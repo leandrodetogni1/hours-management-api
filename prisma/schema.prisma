@@ -43,6 +43,7 @@ enum Course {
 
 enum CurriculumYear {
   Y2015
+  Y2026
 }
 
 model roles {
@@ -98,25 +99,46 @@ model activity_events {
 }
 
 model activity_types {
-  id                              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cod                             String       @unique @db.VarChar(10)
-  label                           String       @db.VarChar(255)
-  category                        Category?
-  unity                           Unity?
-  maxHoursInComplementarActivities Int?        @map("max_hours_complementar")
-  maxHoursPerCertificateOrSemester Int?        @map("max_hours_per_certificate")
-  activities                      activities[]
-  curriculumRules                 activity_type_curriculum_rules[]
+  id              String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cod             String                            @unique @db.VarChar(10)
+  label           String                            @db.VarChar(255)
+  category        Category?
+  unity           Unity?
+  activities      activities[]
+  curriculumRules activity_type_curriculum_rules[]
 }
 
 model activity_type_curriculum_rules {
-  activityTypeId  String         @map("activitytypeid") @db.Uuid
-  curriculumYear  CurriculumYear @map("curriculumyear")
-  maxHoursTotal   Int            @map("max_hours_total")
-  activityType    activity_types @relation(fields: [activityTypeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  activityTypeId                   String         @map("activitytypeid") @db.Uuid
+  curriculumYear                   CurriculumYear @map("curriculumyear")
+  maxHoursTotal                    Int            @map("max_hours_total")
+  maxHoursPerCertificateOrSemester Int            @map("max_hours_per_certificate")
+  activityType                     activity_types @relation(fields: [activityTypeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  curriculum                       curricula      @relation(fields: [curriculumYear], references: [year], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([activityTypeId, curriculumYear])
   @@map("activity_type_curriculum_rules")
+}
+
+model curricula {
+  year                    CurriculumYear            @id
+  minHoursPerCategory     Int?                      @map("min_hours_per_category")
+  minCategoriesRequired   Int?                      @map("min_categories_required")
+  excessToFreeMultiplier  Decimal                   @default(1.00) @map("excess_to_free_multiplier") @db.Decimal(4, 2)
+  minFreeHours            Int                       @map("min_free_hours")
+  courseRules             curriculum_course_rules[]
+  activityTypeRules       activity_type_curriculum_rules[]
+}
+
+model curriculum_course_rules {
+  curriculumYear CurriculumYear @map("curriculumyear")
+  course         Course
+  totalMin       Int            @map("total_min")
+  totalMax       Int            @map("total_max")
+  curriculum     curricula      @relation(fields: [curriculumYear], references: [year], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([curriculumYear, course])
+  @@map("curriculum_course_rules")
 }
 
 

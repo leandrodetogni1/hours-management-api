@@ -1,12 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { Expose } from 'class-transformer';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Category, Unity } from '@prisma/client';
 
 export class UpdateActivityTypeDto {
@@ -55,30 +49,4 @@ export class UpdateActivityTypeDto {
     message: 'Unidade inválida. Use: SEMESTRE, HORAS ou UNIDADE',
   })
   unity?: Unity;
-
-  @ApiPropertyOptional({
-    example: 120,
-    description: 'Máximo de horas em atividades complementares',
-  })
-  @Expose()
-  @IsOptional()
-  @IsNumber(
-    {},
-    { message: 'O máximo de horas complementares deve ser um número' },
-  )
-  @Type(() => Number)
-  maxHoursInComplementarActivities?: number;
-
-  @ApiPropertyOptional({
-    example: 60,
-    description: 'Máximo de horas por certificado ou semestre',
-  })
-  @Expose()
-  @IsOptional()
-  @IsNumber(
-    {},
-    { message: 'O máximo de horas por semestre deve ser um número' },
-  )
-  @Type(() => Number)
-  maxHoursPerCertificateOrSemester?: number;
 }

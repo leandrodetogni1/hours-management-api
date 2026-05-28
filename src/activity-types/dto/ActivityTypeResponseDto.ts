@@ -20,12 +20,6 @@ export class ActivityTypeNestedDto extends ActivityTypeSummaryDto {
 }
 
 export class ActivityTypeResponseDto extends ActivityTypeSummaryDto {
-  @ApiPropertyOptional({ example: 120 })
-  maxHoursInComplementarActivities: number | null;
-
-  @ApiPropertyOptional({ example: 60 })
-  maxHoursPerCertificateOrSemester: number | null;
-
   @ApiPropertyOptional({ example: 'ENSINO' })
   category: string | null;
 

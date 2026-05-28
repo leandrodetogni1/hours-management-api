@@ -25,8 +25,6 @@ export class ActivityTypesRepository {
         id: true,
         cod: true,
         label: true,
-        maxHoursInComplementarActivities: true,
-        maxHoursPerCertificateOrSemester: true,
         category: true,
         unity: true,
       },
@@ -42,8 +40,6 @@ export class ActivityTypesRepository {
         id: true,
         cod: true,
         label: true,
-        maxHoursInComplementarActivities: true,
-        maxHoursPerCertificateOrSemester: true,
         category: true,
         unity: true,
       },
@@ -70,8 +66,6 @@ export class ActivityTypesRepository {
         label: dto.label,
         category: dto.category,
         unity: dto.unity,
-        maxHoursInComplementarActivities: dto.maxHoursInComplementarActivities,
-        maxHoursPerCertificateOrSemester: dto.maxHoursPerCertificateOrSemester,
       },
     });
 
