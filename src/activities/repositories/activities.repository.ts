@@ -20,6 +20,7 @@ import { ActivitySummaryResponseDto } from '../dto/ActivitySummaryResponseDto';
 import { calculateHoursEquivalent } from '../domain/hours-calculator.js';
 import { calculateActivityProgress } from '../domain/progress-calculator.js';
 import { CurriculaRepository } from '../../curricula/repositories/curricula.repository.js';
+import { UploadedActivityFile } from '../activity-file.constants.js';
 
 const allowedSourceStatuses: Record<Status, Status[]> = {
   [Status.PENDING]: [],
@@ -45,6 +46,14 @@ const activityInclude = {
       label: true,
       category: true,
       unity: true,
+    },
+  },
+  file: {
+    select: {
+      filename: true,
+      mimeType: true,
+      size: true,
+      createdAt: true,
     },
   },
 } as const;
@@ -80,6 +89,7 @@ export class ActivitiesRepository {
   async createActivity(
     authorId: string,
     dto: CreateActivityDto,
+    file?: UploadedActivityFile,
   ): Promise<CreateActivityResponseDto> {
     const activityType = await this.prisma.activity_types.findUnique({
       where: { id: dto.activityTypeId },
@@ -134,7 +144,6 @@ export class ActivitiesRepository {
           startDate: dto.startDate,
           endDate: dto.endDate,
         },
-        include: activityInclude,
       });
 
       await tx.activity_events.create({
@@ -147,7 +156,22 @@ export class ActivitiesRepository {
         },
       });
 
-      return created;
+      if (file) {
+        await tx.activity_files.create({
+          data: {
+            activityId: created.id,
+            filename: file.originalname,
+            mimeType: file.mimetype,
+            size: file.size,
+            data: new Uint8Array(file.buffer),
+          },
+        });
+      }
+
+      return tx.activities.findUniqueOrThrow({
+        where: { id: created.id },
+        include: activityInclude,
+      });
     });
 
     return {
@@ -433,6 +457,26 @@ export class ActivitiesRepository {
       select: { authorId: true },
     });
     return activity?.authorId ?? null;
+  }
+
+  async getFile(activityId: string): Promise<{
+    filename: string;
+    mimeType: string;
+    size: number;
+    data: Uint8Array;
+  }> {
+    const file = await this.prisma.activity_files.findUnique({
+      where: { activityId },
+      select: { filename: true, mimeType: true, size: true, data: true },
+    });
+
+    if (!file) {
+      throw new NotFoundException(
+        `Activity with id ${activityId} has no attached file`,
+      );
+    }
+
+    return file;
   }
 
   async getEvents(activityId: string): Promise<ActivityEventResponseDto[]> {

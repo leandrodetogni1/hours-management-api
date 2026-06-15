@@ -15,6 +15,7 @@ import {
 import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
 import { ActivitySummaryResponseDto } from '../dto/ActivitySummaryResponseDto';
 import { JwtUserPayload } from '../../auth/decorators/current-user.decorator';
+import { UploadedActivityFile } from '../activity-file.constants.js';
 
 const EVENTS_PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'] as const;
 const EDIT_PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'] as const;
@@ -47,8 +48,9 @@ export class ActivitiesService {
   createActivity(
     authorId: string,
     activity: CreateActivityDto,
+    file?: UploadedActivityFile,
   ): Promise<CreateActivityResponseDto> {
-    return this.activityRepository.createActivity(authorId, activity);
+    return this.activityRepository.createActivity(authorId, activity, file);
   }
 
   async updateActivity(
@@ -137,5 +139,32 @@ export class ActivitiesService {
     }
 
     return this.activityRepository.getEvents(activityId);
+  }
+
+  async getActivityFile(
+    activityId: string,
+    currentUser: JwtUserPayload,
+  ): Promise<{
+    filename: string;
+    mimeType: string;
+    size: number;
+    data: Uint8Array;
+  }> {
+    const authorId = await this.activityRepository.findOwnerId(activityId);
+    if (!authorId) {
+      throw new NotFoundException(`Activity with id ${activityId} not found`);
+    }
+
+    const isPrivileged =
+      typeof currentUser.role === 'string' &&
+      (EVENTS_PRIVILEGED_ROLES as readonly string[]).includes(currentUser.role);
+
+    if (!isPrivileged && currentUser.sub !== authorId) {
+      throw new ForbiddenException(
+        'Acesso negado. Apenas o dono da atividade ou owner/admin/reviewer',
+      );
+    }
+
+    return this.activityRepository.getFile(activityId);
   }
 }

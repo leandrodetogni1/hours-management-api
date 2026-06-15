@@ -30,6 +30,12 @@ export class ActivityMapper {
       category: string | null;
       unity: string | null;
     } | null;
+    file?: {
+      filename: string;
+      mimeType: string;
+      size: number;
+      createdAt: Date | null;
+    } | null;
   }): ActivityResponseDto {
     return {
       id: activity.id,
@@ -48,6 +54,14 @@ export class ActivityMapper {
       updatedAt: activity.updatedAt?.toISOString() ?? null,
       users: activity.users,
       activity_types: activity.activity_types,
+      file: activity.file
+        ? {
+            filename: activity.file.filename,
+            mimeType: activity.file.mimeType,
+            size: activity.file.size,
+            createdAt: activity.file.createdAt?.toISOString() ?? null,
+          }
+        : null,
     };
   }
 }

@@ -1,16 +1,37 @@
 import {
   Body,
   Controller,
+  FileTypeValidator,
   Get,
   HttpStatus,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
   Patch,
   Post,
   Query,
+  Res,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiExtraModels,
+  ApiProduces,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
+import type { Response } from 'express';
 import { ActivitiesService } from './services/activities.service.js';
 import { CreateActivityDto } from './dto/CreateActivityDto.js';
+import {
+  ALLOWED_ACTIVITY_FILE_MIME_TYPE_REGEX,
+  MAX_ACTIVITY_FILE_SIZE,
+} from './activity-file.constants.js';
+import type { UploadedActivityFile } from './activity-file.constants.js';
 import { UpdateActivityDto } from './dto/UpdateActivityDto.js';
 import {
   ActivityResponseDto,
@@ -72,20 +93,59 @@ export class ActivitiesController {
   @Post()
   @ApiEndpoint({
     summary:
-      'Criar uma nova atividade (authorId é derivado do JWT, body não precisa enviar)',
+      'Criar uma nova atividade (authorId é derivado do JWT, body não precisa enviar). Aceita multipart/form-data com um arquivo opcional de certificado',
     status: HttpStatus.CREATED,
     description: 'Atividade criada',
     type: CreateActivityResponseDto,
     hasBody: true,
     errors: [
       { status: 404, description: 'Autor ou tipo de atividade não encontrado' },
+      { status: 413, description: 'Arquivo excede o tamanho máximo de 5MB' },
     ],
   })
+  @ApiConsumes('multipart/form-data')
+  @ApiExtraModels(CreateActivityDto)
+  @ApiBody({
+    description:
+      'Campos da atividade (form-data) e, opcionalmente, o arquivo do certificado (PDF, PNG ou JPEG, até 5MB)',
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(CreateActivityDto) },
+        {
+          type: 'object',
+          properties: {
+            file: {
+              type: 'string',
+              format: 'binary',
+              description: 'Certificado em PDF, PNG ou JPEG (até 5MB)',
+            },
+          },
+        },
+      ],
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_ACTIVITY_FILE_SIZE },
+    }),
+  )
   createActivity(
     @CurrentUser() user: JwtUserPayload,
     @Body() body: CreateActivityDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: MAX_ACTIVITY_FILE_SIZE }),
+          new FileTypeValidator({
+            fileType: ALLOWED_ACTIVITY_FILE_MIME_TYPE_REGEX,
+          }),
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    file?: UploadedActivityFile,
   ): Promise<CreateActivityResponseDto> {
-    return this.activitiesService.createActivity(user.sub, body);
+    return this.activitiesService.createActivity(user.sub, body, file);
   }
 
   @Patch(':id')
@@ -143,6 +203,39 @@ export class ActivitiesController {
     @Param('id') id: string,
   ): Promise<ActivityEventResponseDto[]> {
     return this.activitiesService.getActivityEvents(id, user);
+  }
+
+  @Get(':id/file')
+  @ApiEndpoint({
+    summary:
+      'Baixar/visualizar o arquivo (certificado) de uma atividade — dono da atividade ou owner/admin/reviewer',
+    description: 'Arquivo binário do certificado (PDF, PNG ou JPEG)',
+    params: [ID_PARAM],
+    errors: [
+      {
+        status: 403,
+        description:
+          'Acesso negado (apenas o dono da atividade ou owner/admin/reviewer)',
+      },
+      {
+        status: 404,
+        description: 'Atividade não encontrada ou sem arquivo anexado',
+      },
+    ],
+  })
+  @ApiProduces('application/pdf', 'image/png', 'image/jpeg')
+  async downloadActivityFile(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const file = await this.activitiesService.getActivityFile(id, user);
+    res.setHeader('Content-Type', file.mimeType);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(file.filename)}"`,
+    );
+    res.send(Buffer.from(file.data));
   }
 
   @Patch(':id/approve')

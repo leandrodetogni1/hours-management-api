@@ -20,6 +20,20 @@ export class ActivityUserSummaryDto {
   picture: string | null;
 }
 
+export class ActivityFileMetadataDto {
+  @ApiProperty({ example: 'certificado.pdf' })
+  filename: string;
+
+  @ApiProperty({ example: 'application/pdf' })
+  mimeType: string;
+
+  @ApiProperty({ example: 102400, description: 'Tamanho do arquivo em bytes' })
+  size: number;
+
+  @ApiPropertyOptional({ example: '2025-03-01T00:00:00.000Z' })
+  createdAt: string | null;
+}
+
 export class ActivityResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   id: string;
@@ -79,6 +93,14 @@ export class ActivityResponseDto {
 
   @ApiPropertyOptional({ type: ActivityTypeNestedDto, nullable: true })
   activity_types: ActivityTypeNestedDto | null;
+
+  @ApiPropertyOptional({
+    type: ActivityFileMetadataDto,
+    nullable: true,
+    description:
+      'Metadados do arquivo anexado (os bytes são obtidos via GET /activities/:id/file)',
+  })
+  file: ActivityFileMetadataDto | null;
 }
 
 export class CreateActivityResponseDto {

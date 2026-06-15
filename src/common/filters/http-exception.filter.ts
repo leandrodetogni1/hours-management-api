@@ -6,6 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { MulterError } from 'multer';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -13,18 +14,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
-
+    let status: number = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Internal server error';
 
-    if (!(exception instanceof HttpException)) {
-      console.error('Unhandled exception:', exception);
-    }
-
-    if (exception instanceof HttpException) {
+    if (exception instanceof MulterError) {
+      const isTooLarge = exception.code === 'LIMIT_FILE_SIZE';
+      status = isTooLarge
+        ? HttpStatus.PAYLOAD_TOO_LARGE
+        : HttpStatus.BAD_REQUEST;
+      message = isTooLarge
+        ? 'Arquivo excede o tamanho máximo de 5MB'
+        : exception.message;
+    } else if (exception instanceof HttpException) {
+      status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
       if (
         typeof exceptionResponse === 'object' &&
@@ -34,6 +36,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       } else {
         message = exception.message;
       }
+    } else {
+      console.error('Unhandled exception:', exception);
     }
 
     response.status(status).json({
