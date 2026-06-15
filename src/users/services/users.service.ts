@@ -53,7 +53,7 @@ export class UsersService {
     return this.usersRepository.createUser(user);
   }
 
-  updateUser(
+  async updateUser(
     id: string,
     data: UpdateUserDto,
     currentUser: JwtUserPayload,
@@ -68,10 +68,24 @@ export class UsersService {
           'Apenas o próprio usuário ou owner/admin podem atualizar este registro',
         );
       }
+
+      const current = await this.usersRepository.findById(id);
+      if (!current) {
+        throw new NotFoundException(`User with id ${id} not found`);
+      }
+
+      const selfEditable = new Set<string>(SELF_EDITABLE_FIELDS);
+      const settingOwnInitialMatricula =
+        data.matricula !== undefined &&
+        (!current.matricula || data.matricula === current.matricula);
+      if (settingOwnInitialMatricula) {
+        selfEditable.add('matricula');
+      }
+
       const disallowed = Object.keys(data).filter(
         (key) =>
           data[key as keyof UpdateUserDto] !== undefined &&
-          !(SELF_EDITABLE_FIELDS as readonly string[]).includes(key),
+          !selfEditable.has(key),
       );
       if (disallowed.length > 0) {
         throw new ForbiddenException(
