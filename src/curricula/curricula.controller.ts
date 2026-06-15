@@ -29,6 +29,7 @@ import { UpdateCurriculumDto } from './dto/UpdateCurriculumDto.js';
 import { UpsertCourseRuleDto } from './dto/UpsertCourseRuleDto.js';
 import { UpsertActivityTypeRuleDto } from './dto/UpsertActivityTypeRuleDto.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
+import { Audit } from '../audit/audit.decorator.js';
 
 const OWNER_ONLY = ['owner'];
 
@@ -90,6 +91,11 @@ export class CurriculaController {
   }
 
   @Post()
+  @Audit({
+    action: 'curriculum.created',
+    entityType: 'curriculum',
+    resolveEntityId: (req) => (req.body?.year as string) ?? null,
+  })
   @ApiEndpoint({
     summary: 'Criar currículo (owner)',
     status: HttpStatus.CREATED,
@@ -105,6 +111,11 @@ export class CurriculaController {
   }
 
   @Patch(':year')
+  @Audit({
+    action: 'curriculum.updated',
+    entityType: 'curriculum',
+    entityIdParam: 'year',
+  })
   @ApiEndpoint({
     summary: 'Atualizar regras globais de um currículo (owner)',
     description: 'Currículo atualizado',
@@ -121,6 +132,11 @@ export class CurriculaController {
   }
 
   @Delete(':year')
+  @Audit({
+    action: 'curriculum.deleted',
+    entityType: 'curriculum',
+    entityIdParam: 'year',
+  })
   @ApiEndpoint({
     summary: 'Remover currículo (owner)',
     description: 'Currículo removido',
@@ -133,6 +149,11 @@ export class CurriculaController {
   }
 
   @Put(':year/course-rules/:course')
+  @Audit({
+    action: 'curriculum.course_rule_upserted',
+    entityType: 'curriculum_course_rule',
+    resolveEntityId: (req) => `${req.params.year}:${req.params.course}`,
+  })
   @ApiEndpoint({
     summary: 'Upsert de regra por curso (owner)',
     description: 'Regra de curso criada ou atualizada',
@@ -154,6 +175,11 @@ export class CurriculaController {
   }
 
   @Delete(':year/course-rules/:course')
+  @Audit({
+    action: 'curriculum.course_rule_deleted',
+    entityType: 'curriculum_course_rule',
+    resolveEntityId: (req) => `${req.params.year}:${req.params.course}`,
+  })
   @ApiEndpoint({
     summary: 'Remover regra de curso do currículo (owner)',
     description: 'Regra de curso removida',
@@ -172,6 +198,11 @@ export class CurriculaController {
   }
 
   @Put(':year/activity-type-rules/:cod')
+  @Audit({
+    action: 'curriculum.activity_type_rule_upserted',
+    entityType: 'curriculum_activity_type_rule',
+    resolveEntityId: (req) => `${req.params.year}:${req.params.cod}`,
+  })
   @ApiEndpoint({
     summary: 'Upsert de regra por tipo de atividade (owner)',
     description: 'Regra do tipo de atividade criada ou atualizada',
@@ -193,6 +224,11 @@ export class CurriculaController {
   }
 
   @Delete(':year/activity-type-rules/:cod')
+  @Audit({
+    action: 'curriculum.activity_type_rule_deleted',
+    entityType: 'curriculum_activity_type_rule',
+    resolveEntityId: (req) => `${req.params.year}:${req.params.cod}`,
+  })
   @ApiEndpoint({
     summary: 'Remover regra do tipo de atividade do currículo (owner)',
     description: 'Regra do tipo de atividade removida',

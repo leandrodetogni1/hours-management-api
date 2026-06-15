@@ -7,7 +7,6 @@ import { json, urlencoded } from 'express';
 import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common/pipes';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor.js';
-import { AllExceptionsFilter } from './common/filters/http-exception.filter.js';
 
 const BODY_LIMIT = '100kb';
 
@@ -79,7 +78,6 @@ async function bootstrap() {
     }),
   );
   app.useGlobalInterceptors(new ResponseInterceptor());
-  app.useGlobalFilters(new AllExceptionsFilter());
   await app.listen(port);
 }
 void bootstrap();

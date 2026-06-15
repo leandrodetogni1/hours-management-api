@@ -45,6 +45,7 @@ import { ActivityEventResponseDto } from './dto/ActivityEventResponseDto.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
+import { Audit } from '../audit/audit.decorator.js';
 
 const ID_PARAM = { name: 'id', description: 'UUID da atividade' };
 const REVIEWER_ROLES = ['admin', 'reviewer'];
@@ -91,6 +92,7 @@ export class ActivitiesController {
   }
 
   @Post()
+  @Audit({ action: 'activity.created', entityType: 'activity' })
   @ApiEndpoint({
     summary:
       'Criar uma nova atividade (authorId é derivado do JWT, body não precisa enviar). Aceita multipart/form-data com um arquivo opcional de certificado',
@@ -149,6 +151,7 @@ export class ActivitiesController {
   }
 
   @Patch(':id')
+  @Audit({ action: 'activity.updated', entityType: 'activity' })
   @ApiEndpoint({
     summary:
       'Editar uma atividade PENDING — dono da atividade ou owner/admin/reviewer (apenas campos enviados são alterados; hoursEquivalent é recalculado)',
@@ -239,6 +242,7 @@ export class ActivitiesController {
   }
 
   @Patch(':id/approve')
+  @Audit({ action: 'activity.approved', entityType: 'activity' })
   @ApiEndpoint({
     summary:
       'Aprovar uma atividade (a partir de PENDING ou VERIFIED) — owner/admin apenas',
@@ -264,6 +268,7 @@ export class ActivitiesController {
   }
 
   @Patch(':id/reject')
+  @Audit({ action: 'activity.rejected', entityType: 'activity' })
   @ApiEndpoint({
     summary:
       'Rejeitar uma atividade (a partir de PENDING ou VERIFIED) — admin/reviewer',
@@ -289,6 +294,7 @@ export class ActivitiesController {
   }
 
   @Patch(':id/verify')
+  @Audit({ action: 'activity.verified', entityType: 'activity' })
   @ApiEndpoint({
     summary: 'Verificar uma atividade (a partir de PENDING) — admin/reviewer',
     description: 'Atividade verificada',

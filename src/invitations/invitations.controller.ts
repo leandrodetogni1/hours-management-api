@@ -17,6 +17,7 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
+import { Audit } from '../audit/audit.decorator.js';
 
 const ID_PARAM = { name: 'id', description: 'UUID do convite' };
 const OWNER_ROLES = ['owner'];
@@ -40,6 +41,7 @@ export class InvitationsController {
   }
 
   @Post()
+  @Audit({ action: 'invitation.created', entityType: 'invitation' })
   @ApiEndpoint({
     summary:
       'Criar convite (email + role) que será consumido no primeiro login Google do convidado — owner apenas',
@@ -63,6 +65,7 @@ export class InvitationsController {
   }
 
   @Delete(':id')
+  @Audit({ action: 'invitation.deleted', entityType: 'invitation' })
   @ApiEndpoint({
     summary: 'Revogar convite pendente — owner apenas',
     status: HttpStatus.NO_CONTENT,

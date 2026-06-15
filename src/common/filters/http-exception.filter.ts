@@ -4,15 +4,28 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Injectable,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { MulterError } from 'multer';
+import { AuditService } from '../../audit/services/audit.service.js';
+import { clientIp, entityFromPath } from '../../audit/audit.interceptor.js';
 
+const MUTATION_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
+
+interface AuditableRequest extends Request {
+  user?: { sub: string; email: string; role: string | null };
+}
+
+@Injectable()
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
+  constructor(private readonly auditService: AuditService) {}
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<AuditableRequest>();
 
     let status: number = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Internal server error';
@@ -40,9 +53,43 @@ export class AllExceptionsFilter implements ExceptionFilter {
       console.error('Unhandled exception:', exception);
     }
 
+    this.auditFailure(request, status);
+
     response.status(status).json({
       statusCode: status,
       message,
+    });
+  }
+
+  private auditFailure(request: AuditableRequest, status: number): void {
+    const path = request.path ?? request.originalUrl?.split('?')[0] ?? null;
+    const isAuthRoute = !!path && path.includes('/auth/');
+    const isMutation = MUTATION_METHODS.has(request.method);
+
+    if (!isMutation && !isAuthRoute) {
+      return;
+    }
+
+    const entityType = entityFromPath(path);
+    const action = isAuthRoute
+      ? 'auth.login'
+      : `${entityType ?? 'http'}.${request.method.toLowerCase()}`;
+    const userAgentHeader = request.headers['user-agent'];
+
+    void this.auditService.safeRecord({
+      actorId: request.user?.sub ?? null,
+      actorEmail: request.user?.email ?? null,
+      action,
+      entityType: entityType ?? null,
+      entityId: request.params?.id ?? null,
+      method: request.method,
+      path,
+      statusCode: status,
+      ip: clientIp(request),
+      userAgent:
+        typeof userAgentHeader === 'string'
+          ? userAgentHeader.slice(0, 500)
+          : null,
     });
   }
 }

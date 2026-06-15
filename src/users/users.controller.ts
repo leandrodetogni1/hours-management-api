@@ -23,6 +23,7 @@ import { ActivitySummaryResponseDto } from '../activities/dto/ActivitySummaryRes
 import { GetMyActivitiesQueryDto } from '../activities/dto/GetMyActivitiesQueryDto.js';
 import { GetUsersQueryDto } from './dto/GetUsersQueryDto.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
+import { Audit } from '../audit/audit.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
 
@@ -66,6 +67,7 @@ export class UsersController {
   }
 
   @Post()
+  @Audit({ action: 'user.created', entityType: 'user' })
   @ApiEndpoint({
     summary: 'Criar um novo usuário (admin)',
     status: HttpStatus.CREATED,
@@ -79,6 +81,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @Audit({ action: 'user.updated', entityType: 'user' })
   @ApiEndpoint({
     summary:
       'Atualizar dados do usuário — próprio usuário (nome, curso, currículo, situação) ou owner/admin (qualquer campo, inclusive matrícula)',
@@ -129,6 +132,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @Audit({ action: 'user.deleted', entityType: 'user' })
   @ApiEndpoint({
     summary: 'Deletar usuário por ID (admin)',
     status: HttpStatus.NO_CONTENT,

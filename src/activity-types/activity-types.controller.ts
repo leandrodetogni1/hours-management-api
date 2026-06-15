@@ -18,6 +18,7 @@ import {
 import { CreateActivityTypeDto } from './dto/CreateActivityTypeDto.js';
 import { UpdateActivityTypeDto } from './dto/UpdateActivityTypeDto.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
+import { Audit } from '../audit/audit.decorator.js';
 
 const ID_PARAM = { name: 'id', description: 'UUID do tipo de atividade' };
 const ADMIN_ROLES = ['admin'];
@@ -51,6 +52,7 @@ export class ActivityTypesController {
   }
 
   @Post()
+  @Audit({ action: 'activity_type.created', entityType: 'activity_type' })
   @ApiEndpoint({
     summary: 'Criar um novo tipo de atividade (admin)',
     status: HttpStatus.CREATED,
@@ -66,6 +68,7 @@ export class ActivityTypesController {
   }
 
   @Patch(':id')
+  @Audit({ action: 'activity_type.updated', entityType: 'activity_type' })
   @ApiEndpoint({
     summary: 'Atualizar tipo de atividade (admin)',
     description: 'Tipo de atividade atualizado',
@@ -82,6 +85,7 @@ export class ActivityTypesController {
   }
 
   @Delete(':id')
+  @Audit({ action: 'activity_type.deleted', entityType: 'activity_type' })
   @ApiEndpoint({
     summary: 'Deletar tipo de atividade (admin)',
     status: HttpStatus.NO_CONTENT,
