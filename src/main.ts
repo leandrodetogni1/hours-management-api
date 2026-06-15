@@ -14,8 +14,6 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 3000;
-  const nodeEnv = configService.get<string>('NODE_ENV') ?? 'development';
-  const isProd = nodeEnv === 'production';
 
   app.setGlobalPrefix('api');
 
@@ -35,17 +33,15 @@ async function bootstrap() {
   const swaggerUser = configService.get<string>('SWAGGER_USER');
   const swaggerPassword = configService.get<string>('SWAGGER_PASSWORD');
 
-  if (isProd && (!swaggerUser || !swaggerPassword)) {
-    throw new Error(
-      'SWAGGER_USER e SWAGGER_PASSWORD são obrigatórios em produção',
-    );
+  if (!swaggerUser || !swaggerPassword) {
+    throw new Error('SWAGGER_USER e SWAGGER_PASSWORD são obrigatórios');
   }
 
   app.use(
     '/api/docs{/:path}',
     basicAuth({
       challenge: true,
-      users: { [swaggerUser ?? 'admin']: swaggerPassword ?? 'admin123' },
+      users: { [swaggerUser]: swaggerPassword },
     }),
   );
 
@@ -67,7 +63,10 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('api/docs', app, document, {
+    jsonDocumentUrl: 'api/docs/json',
+    yamlDocumentUrl: 'api/docs/yaml',
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
