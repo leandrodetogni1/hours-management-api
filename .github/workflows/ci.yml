@@ -10,6 +10,8 @@ jobs:
   verify:
     name: Lint, build & security audit
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://user:password@localhost:5432/db?schema=public
     steps:
       - uses: actions/checkout@v4
 
