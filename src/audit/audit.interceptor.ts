@@ -76,9 +76,6 @@ export class AuditInterceptor implements NestInterceptor {
     const actorId = options?.resolveActorId
       ? (options.resolveActorId(req, result) ?? null)
       : (req.user?.sub ?? null);
-    const actorEmail = options?.resolveActorEmail
-      ? (options.resolveActorEmail(req, result) ?? null)
-      : (req.user?.email ?? null);
 
     const userAgentHeader = req.headers?.['user-agent'];
     const userAgent =
@@ -88,7 +85,6 @@ export class AuditInterceptor implements NestInterceptor {
 
     return {
       actorId,
-      actorEmail,
       action,
       entityType: entityType ?? null,
       entityId,

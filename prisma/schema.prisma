@@ -177,7 +177,6 @@ model users {
 model audit_logs {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   actorId    String?  @map("actorid") @db.Uuid
-  actorEmail String?  @map("actoremail") @db.VarChar(255)
   action     String   @db.VarChar(100)
   entityType String?  @map("entitytype") @db.VarChar(50)
   entityId   String?  @map("entityid") @db.VarChar(255)

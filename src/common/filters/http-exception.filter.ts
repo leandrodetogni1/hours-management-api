@@ -62,23 +62,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
   }
 
   private auditFailure(request: AuditableRequest, status: number): void {
-    const path = request.path ?? request.originalUrl?.split('?')[0] ?? null;
-    const isAuthRoute = !!path && path.includes('/auth/');
     const isMutation = MUTATION_METHODS.has(request.method);
-
-    if (!isMutation && !isAuthRoute) {
+    if (!isMutation) {
       return;
     }
 
+    const path = request.path ?? request.originalUrl?.split('?')[0] ?? null;
+    const isLoginRoute = !!path && path.includes('/auth/');
     const entityType = entityFromPath(path);
-    const action = isAuthRoute
+    const action = isLoginRoute
       ? 'auth.login'
       : `${entityType ?? 'http'}.${request.method.toLowerCase()}`;
     const userAgentHeader = request.headers['user-agent'];
 
     void this.auditService.safeRecord({
       actorId: request.user?.sub ?? null,
-      actorEmail: request.user?.email ?? null,
       action,
       entityType: entityType ?? null,
       entityId: request.params?.id ?? null,

@@ -3,8 +3,6 @@ import { AuditLogResponseDto } from '../dto/AuditLogResponseDto';
 export class AuditLogMapper {
   static toResponseDto(log: {
     id: string;
-    actorId: string | null;
-    actorEmail: string | null;
     action: string;
     entityType: string | null;
     entityId: string | null;
@@ -19,12 +17,11 @@ export class AuditLogMapper {
       email: string;
       firstName: string;
       lastName: string;
+      picture: string | null;
     } | null;
   }): AuditLogResponseDto {
     return {
       id: log.id,
-      actorId: log.actorId,
-      actorEmail: log.actorEmail,
       action: log.action,
       entityType: log.entityType,
       entityId: log.entityId,

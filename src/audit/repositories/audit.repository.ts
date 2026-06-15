@@ -7,7 +7,13 @@ import { AuditLogsPageDto } from '../dto/AuditLogResponseDto';
 import { AuditLogMapper } from '../mappers/audit-log.mapper';
 
 const auditActorSelect = {
-  select: { id: true, email: true, firstName: true, lastName: true },
+  select: {
+    id: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+    picture: true,
+  },
 } as const;
 
 @Injectable()

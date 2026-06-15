@@ -12,23 +12,16 @@ export class AuditActorDto {
 
   @ApiProperty({ example: 'Silva' })
   lastName: string;
+
+  @ApiPropertyOptional({
+    example: 'https://lh3.googleusercontent.com/a/ACg8oc...',
+  })
+  picture: string | null;
 }
 
 export class AuditLogResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   id: string;
-
-  @ApiPropertyOptional({
-    example: '550e8400-e29b-41d4-a716-446655440000',
-    description: 'ID do ator (null = sistema ou usuário removido)',
-  })
-  actorId: string | null;
-
-  @ApiPropertyOptional({
-    example: 'joao@ufpel.edu.br',
-    description: 'E-mail do ator no momento da ação (snapshot)',
-  })
-  actorEmail: string | null;
 
   @ApiProperty({ example: 'activity.approved' })
   action: string;
