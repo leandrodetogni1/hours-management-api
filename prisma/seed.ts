@@ -42,6 +42,8 @@ interface CourseRuleSeed {
   totalMax: number;
 }
 
+const roleNames: string[] = ['owner', 'admin', 'reviewer', 'member'];
+
 const activityTypes: ActivityTypeSeed[] = [
   {
     cod: 'A',
@@ -197,6 +199,14 @@ const activityTypeRules: ActivityTypeRuleSeed[] = activityTypes.map((at) => ({
 }));
 
 async function main() {
+  for (const name of roleNames) {
+    await prisma.roles.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+  }
+
   for (const at of activityTypes) {
     await prisma.activity_types.upsert({
       where: { cod: at.cod },
