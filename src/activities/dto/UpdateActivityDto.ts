@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDate,
   IsEnum,
   IsNotEmpty,
@@ -22,6 +23,12 @@ const MAX_DATE = new Date('2100-01-01');
 
 const trim = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;
+
+const toBoolean = ({ value }: { value: unknown }): unknown => {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return value;
+};
 
 export class UpdateActivityDto {
   @ApiPropertyOptional({
@@ -129,4 +136,15 @@ export class UpdateActivityDto {
   @MinDate(MIN_DATE, { message: 'endDate deve ser posterior a 2000-01-01' })
   @MaxDate(MAX_DATE, { message: 'endDate deve ser anterior a 2100-01-01' })
   endDate?: Date;
+
+  @ApiPropertyOptional({
+    example: false,
+    description:
+      'Se true, remove o arquivo (certificado) atual da atividade. Não pode ser combinado com o envio de um novo arquivo.',
+  })
+  @Expose()
+  @Transform(toBoolean)
+  @IsOptional()
+  @IsBoolean({ message: 'removeFile deve ser um booleano' })
+  removeFile?: boolean;
 }

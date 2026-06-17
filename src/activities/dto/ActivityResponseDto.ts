@@ -118,3 +118,8 @@ export class UpdateActivityResponseDto {
   @ApiProperty({ type: ActivityResponseDto })
   activity: ActivityResponseDto;
 }
+
+export class DeleteActivityResponseDto {
+  @ApiProperty({ example: 'Atividade deletada com sucesso' })
+  message: string;
+}

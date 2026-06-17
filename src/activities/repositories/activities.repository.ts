@@ -234,7 +234,14 @@ export class ActivitiesRepository {
     id: string,
     dto: UpdateActivityDto,
     actorId: string,
+    file?: UploadedActivityFile,
   ): Promise<UpdateActivityResponseDto> {
+    if (file && dto.removeFile) {
+      throw new BadRequestException(
+        'Não é possível enviar um arquivo e remover o arquivo ao mesmo tempo',
+      );
+    }
+
     const existing = await this.prisma.activities.findUnique({
       where: { id },
       select: {
@@ -338,7 +345,7 @@ export class ActivitiesRepository {
     );
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      const result = await tx.activities.update({
+      await tx.activities.update({
         where: { id },
         data: {
           ...(dto.activityTypeId !== undefined && {
@@ -360,8 +367,28 @@ export class ActivitiesRepository {
           ...(dto.endDate !== undefined && { endDate: dto.endDate }),
           updatedAt: new Date(),
         },
-        include: activityInclude,
       });
+
+      if (file) {
+        await tx.activity_files.upsert({
+          where: { activityId: id },
+          create: {
+            activityId: id,
+            filename: file.originalname,
+            mimeType: file.mimetype,
+            size: file.size,
+            data: new Uint8Array(file.buffer),
+          },
+          update: {
+            filename: file.originalname,
+            mimeType: file.mimetype,
+            size: file.size,
+            data: new Uint8Array(file.buffer),
+          },
+        });
+      } else if (dto.removeFile) {
+        await tx.activity_files.deleteMany({ where: { activityId: id } });
+      }
 
       await tx.activity_events.create({
         data: {
@@ -373,7 +400,10 @@ export class ActivitiesRepository {
         },
       });
 
-      return result;
+      return tx.activities.findUniqueOrThrow({
+        where: { id },
+        include: activityInclude,
+      });
     });
 
     return {
@@ -457,6 +487,19 @@ export class ActivitiesRepository {
       select: { authorId: true },
     });
     return activity?.authorId ?? null;
+  }
+
+  async findStatusAndOwner(
+    activityId: string,
+  ): Promise<{ status: Status | null; authorId: string | null } | null> {
+    return this.prisma.activities.findUnique({
+      where: { id: activityId },
+      select: { status: true, authorId: true },
+    });
+  }
+
+  async deleteActivity(activityId: string): Promise<void> {
+    await this.prisma.activities.delete({ where: { id: activityId } });
   }
 
   async getFile(activityId: string): Promise<{

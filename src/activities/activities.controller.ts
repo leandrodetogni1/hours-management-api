@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   FileTypeValidator,
   Get,
   HttpStatus,
@@ -36,6 +37,7 @@ import { UpdateActivityDto } from './dto/UpdateActivityDto.js';
 import {
   ActivityResponseDto,
   CreateActivityResponseDto,
+  DeleteActivityResponseDto,
   UpdateActivityResponseDto,
 } from './dto/ActivityResponseDto.js';
 import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
@@ -154,7 +156,7 @@ export class ActivitiesController {
   @Audit({ action: 'activity.updated', entityType: 'activity' })
   @ApiEndpoint({
     summary:
-      'Editar uma atividade PENDING — dono da atividade ou owner/admin/reviewer (apenas campos enviados são alterados; hoursEquivalent é recalculado)',
+      'Editar uma atividade PENDING — dono da atividade ou owner/admin/reviewer (apenas campos enviados são alterados; hoursEquivalent é recalculado). Aceita multipart/form-data para anexar/substituir o arquivo, ou removeFile=true para removê-lo',
     description: 'Atividade atualizada',
     type: UpdateActivityResponseDto,
     params: [ID_PARAM],
@@ -163,7 +165,7 @@ export class ActivitiesController {
       {
         status: 400,
         description:
-          'Atividade não está em PENDING (apenas PENDING pode ser editada) ou endDate < startDate',
+          'Atividade não está em PENDING (apenas PENDING pode ser editada), endDate < startDate, ou envio de arquivo combinado com removeFile',
       },
       {
         status: 403,
@@ -174,14 +176,82 @@ export class ActivitiesController {
         status: 404,
         description: 'Atividade ou tipo de atividade não encontrado',
       },
+      { status: 413, description: 'Arquivo excede o tamanho máximo de 5MB' },
     ],
   })
+  @ApiConsumes('multipart/form-data')
+  @ApiExtraModels(UpdateActivityDto)
+  @ApiBody({
+    description:
+      'Campos da atividade (form-data) e, opcionalmente, o arquivo do certificado (PDF, PNG ou JPEG, até 5MB). Envie removeFile=true para remover o arquivo atual.',
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(UpdateActivityDto) },
+        {
+          type: 'object',
+          properties: {
+            file: {
+              type: 'string',
+              format: 'binary',
+              description: 'Certificado em PDF, PNG ou JPEG (até 5MB)',
+            },
+          },
+        },
+      ],
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_ACTIVITY_FILE_SIZE },
+    }),
+  )
   updateActivity(
     @CurrentUser() user: JwtUserPayload,
     @Param('id') id: string,
     @Body() body: UpdateActivityDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: MAX_ACTIVITY_FILE_SIZE }),
+          new FileTypeValidator({
+            fileType: ALLOWED_ACTIVITY_FILE_MIME_TYPE_REGEX,
+          }),
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    file?: UploadedActivityFile,
   ): Promise<UpdateActivityResponseDto> {
-    return this.activitiesService.updateActivity(id, body, user);
+    return this.activitiesService.updateActivity(id, body, user, file);
+  }
+
+  @Delete(':id')
+  @Audit({ action: 'activity.deleted', entityType: 'activity' })
+  @ApiEndpoint({
+    summary:
+      'Deletar uma atividade — member apenas as próprias e em PENDING; owner/admin qualquer atividade; reviewer não pode',
+    description: 'Atividade deletada',
+    type: DeleteActivityResponseDto,
+    params: [ID_PARAM],
+    errors: [
+      {
+        status: 400,
+        description:
+          'Atividade não está em PENDING (member só pode deletar atividades PENDING)',
+      },
+      {
+        status: 403,
+        description:
+          'Acesso negado (reviewer não pode deletar; member só pode deletar as próprias atividades)',
+      },
+      { status: 404, description: 'Atividade não encontrada' },
+    ],
+  })
+  deleteActivity(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id') id: string,
+  ): Promise<DeleteActivityResponseDto> {
+    return this.activitiesService.deleteActivity(id, user);
   }
 
   @Get(':id/events')

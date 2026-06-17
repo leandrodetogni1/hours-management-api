@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -10,6 +11,7 @@ import { UpdateActivityDto } from '../dto/UpdateActivityDto';
 import {
   ActivityResponseDto,
   CreateActivityResponseDto,
+  DeleteActivityResponseDto,
   UpdateActivityResponseDto,
 } from '../dto/ActivityResponseDto';
 import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
@@ -57,6 +59,7 @@ export class ActivitiesService {
     activityId: string,
     dto: UpdateActivityDto,
     currentUser: JwtUserPayload,
+    file?: UploadedActivityFile,
   ): Promise<UpdateActivityResponseDto> {
     const authorId = await this.activityRepository.findOwnerId(activityId);
     if (!authorId) {
@@ -77,6 +80,7 @@ export class ActivitiesService {
       activityId,
       dto,
       currentUser.sub,
+      file,
     );
   }
 
@@ -117,6 +121,43 @@ export class ActivitiesService {
       actorId,
       comment,
     );
+  }
+
+  async deleteActivity(
+    activityId: string,
+    currentUser: JwtUserPayload,
+  ): Promise<DeleteActivityResponseDto> {
+    const activity =
+      await this.activityRepository.findStatusAndOwner(activityId);
+    if (!activity) {
+      throw new NotFoundException(`Activity with id ${activityId} not found`);
+    }
+
+    if (currentUser.role === 'reviewer') {
+      throw new ForbiddenException(
+        'Acesso negado. Reviewer não pode deletar atividades',
+      );
+    }
+
+    const isAdminOrOwner =
+      currentUser.role === 'owner' || currentUser.role === 'admin';
+
+    if (!isAdminOrOwner) {
+      if (currentUser.sub !== activity.authorId) {
+        throw new ForbiddenException(
+          'Acesso negado. Apenas o autor pode deletar a atividade',
+        );
+      }
+      if ((activity.status ?? Status.PENDING) !== Status.PENDING) {
+        throw new BadRequestException(
+          'Apenas atividades PENDING podem ser deletadas',
+        );
+      }
+    }
+
+    await this.activityRepository.deleteActivity(activityId);
+
+    return { message: 'Activity deleted successfully' };
   }
 
   async getActivityEvents(
