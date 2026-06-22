@@ -3,16 +3,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { UsersRepository } from '../repositories/users.repository';
+import {
+  GetAllUsersOptions,
+  UsersRepository,
+} from '../repositories/users.repository';
 import { ActivitiesService } from '../../activities/services/activities.service';
 import { CreateUserDto } from '../dto/CreateUserDto';
 import { UpdateUserDto } from '../dto/UpdateUserDto';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { ActivityResponseDto } from '../../activities/dto/ActivityResponseDto';
 import { ActivitySummaryResponseDto } from '../../activities/dto/ActivitySummaryResponseDto';
-import { UserCourse } from '../../enums/UserCourse';
-import { UserSituation } from '../../enums/UserSituation';
-import { FilterableRole } from '../dto/GetUsersQueryDto';
+import { PaginatedUsersResponseDto } from '../dto/PaginatedUsersResponseDto';
 import { JwtUserPayload } from '../../auth/decorators/current-user.decorator';
 import { Status } from '@prisma/client';
 
@@ -33,12 +34,8 @@ export class UsersService {
     private activitiesService: ActivitiesService,
   ) {}
 
-  getAllUsers(
-    situation?: UserSituation,
-    role?: FilterableRole,
-    course?: UserCourse,
-  ): Promise<UserResponseDto[]> {
-    return this.usersRepository.getAll(situation, role, course);
+  getAllUsers(options: GetAllUsersOptions): Promise<PaginatedUsersResponseDto> {
+    return this.usersRepository.getAll(options);
   }
 
   async getUserById(id: string): Promise<UserResponseDto> {

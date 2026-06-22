@@ -22,6 +22,7 @@ import { ActivityResponseDto } from '../activities/dto/ActivityResponseDto.js';
 import { ActivitySummaryResponseDto } from '../activities/dto/ActivitySummaryResponseDto.js';
 import { GetMyActivitiesQueryDto } from '../activities/dto/GetMyActivitiesQueryDto.js';
 import { GetUsersQueryDto } from './dto/GetUsersQueryDto.js';
+import { PaginatedUsersResponseDto } from './dto/PaginatedUsersResponseDto.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
 import { Audit } from '../audit/audit.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -40,18 +41,25 @@ export class UsersController {
   @Get()
   @ApiEndpoint({
     summary:
-      'Listar todos os usuários — owner/admin/reviewer apenas (filtros opcionais por situação, role e curso)',
-    description: 'Lista de usuários',
-    type: UserResponseDto,
-    isArray: true,
+      'Listar usuários paginados — owner/admin/reviewer apenas (filtros por situação/role/curso, busca textual e ordenação)',
+    description:
+      'Lista paginada de usuários. Suporta filtros por situação, role e curso; busca textual case-insensitive em nome/sobrenome/email/matrícula; ordenação por firstName/lastName/email/matricula/createdAt e por situation (ordem de prioridade FORMANDO → REGULAR → FORMADO).',
+    type: PaginatedUsersResponseDto,
     roles: PRIVILEGED_ROLES,
   })
-  findAll(@Query() query: GetUsersQueryDto): Promise<UserResponseDto[]> {
-    return this.usersService.getAllUsers(
-      query.situation,
-      query.role,
-      query.course,
-    );
+  findAll(
+    @Query() query: GetUsersQueryDto,
+  ): Promise<PaginatedUsersResponseDto> {
+    return this.usersService.getAllUsers({
+      situation: query.situation,
+      role: query.role,
+      course: query.course,
+      search: query.search,
+      page: query.page,
+      pageSize: query.pageSize,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    });
   }
 
   @Get(':id')

@@ -6,7 +6,39 @@ import { UserSituation } from '../../enums/UserSituation';
 
 type UserWithRole = users & { role: roles };
 
+export interface RawUserRow {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  picture: string | null;
+  matricula: string | null;
+  situation: string | null;
+  course: string | null;
+  curriculumYear: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  roleName: string;
+}
+
 export class UserMapper {
+  static fromRawRow(row: RawUserRow): UserResponseDto {
+    return {
+      id: row.id,
+      email: row.email,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      picture: row.picture ?? null,
+      role: row.roleName,
+      matricula: row.matricula ?? null,
+      situation: (row.situation as UserSituation) ?? null,
+      course: (row.course as UserCourse) ?? null,
+      curriculumYear: (row.curriculumYear as CurriculumYear) ?? null,
+      createdAt: row.createdAt ? row.createdAt.toISOString() : null,
+      updatedAt: row.updatedAt ? row.updatedAt.toISOString() : null,
+    };
+  }
+
   static toResponseDto(user: UserWithRole): UserResponseDto {
     return {
       id: user.id,
