@@ -8,10 +8,13 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 
 import { UsersService } from './services/users.service.js';
+import { ExportService } from './services/export.service.js';
 import { CreateUserDto } from './dto/CreateUserDto.js';
 import { UpdateUserDto } from './dto/UpdateUserDto.js';
 import {
@@ -23,6 +26,7 @@ import { ActivitySummaryResponseDto } from '../activities/dto/ActivitySummaryRes
 import { GetMyActivitiesQueryDto } from '../activities/dto/GetMyActivitiesQueryDto.js';
 import { GetUsersQueryDto } from './dto/GetUsersQueryDto.js';
 import { PaginatedUsersResponseDto } from './dto/PaginatedUsersResponseDto.js';
+import { FormandosAptosResponseDto } from './dto/FormandoAptoResponseDto.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
 import { Audit } from '../audit/audit.decorator.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -36,7 +40,10 @@ const PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'];
 @ApiBearerAuth()
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private exportService: ExportService,
+  ) {}
 
   @Get()
   @ApiEndpoint({
@@ -60,6 +67,48 @@ export class UsersController {
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,
     });
+  }
+
+  @Get('formandos-aptos')
+  @ApiEndpoint({
+    summary: 'Listar formandos que completaram todas as horas — owner/admin/reviewer apenas',
+    description: 'Retorna alunos com situation=FORMANDO e isReadyToGraduate=true, com horas por categoria',
+    type: FormandosAptosResponseDto,
+    roles: PRIVILEGED_ROLES,
+  })
+  getFormandosAptos(): Promise<FormandosAptosResponseDto> {
+    return this.usersService.getFormandosAptos();
+  }
+
+  @Get('formandos-aptos/export')
+  @ApiEndpoint({
+    summary: 'Exportar formandos aptos em XLSX ou PDF — owner/admin/reviewer apenas',
+    description: 'Download do arquivo. Use ?format=xlsx ou ?format=pdf',
+    roles: PRIVILEGED_ROLES,
+  })
+  async exportFormandosAptos(
+    @Query('format') format: 'xlsx' | 'pdf' = 'xlsx',
+    @Res() res: Response,
+  ): Promise<void> {
+    const { items } = await this.usersService.getFormandosAptos();
+
+    if (format === 'pdf') {
+      const buffer = this.exportService.generatePdf(items);
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="formandos-aptos.pdf"',
+        'Content-Length': buffer.length,
+      });
+      res.end(buffer);
+    } else {
+      const buffer = await this.exportService.generateXlsx(items);
+      res.set({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': 'attachment; filename="formandos-aptos.xlsx"',
+        'Content-Length': buffer.length,
+      });
+      res.end(buffer);
+    }
   }
 
   @Get(':id')

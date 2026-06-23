@@ -8,14 +8,22 @@ import {
   UsersRepository,
 } from '../repositories/users.repository';
 import { ActivitiesService } from '../../activities/services/activities.service';
+import { CurriculaRepository } from '../../curricula/repositories/curricula.repository';
 import { CreateUserDto } from '../dto/CreateUserDto';
 import { UpdateUserDto } from '../dto/UpdateUserDto';
 import { CreateUserResponseDto, UserResponseDto } from '../dto/UserResponseDto';
 import { ActivityResponseDto } from '../../activities/dto/ActivityResponseDto';
 import { ActivitySummaryResponseDto } from '../../activities/dto/ActivitySummaryResponseDto';
 import { PaginatedUsersResponseDto } from '../dto/PaginatedUsersResponseDto';
+import {
+  FormandoAptoItemDto,
+  FormandosAptosResponseDto,
+} from '../dto/FormandoAptoResponseDto';
 import { JwtUserPayload } from '../../auth/decorators/current-user.decorator';
-import { Status } from '@prisma/client';
+import { ActivityClass, Category, CurriculumYear, Status } from '@prisma/client';
+import { calculateActivityProgress } from '../../activities/domain/progress-calculator';
+import { CurriculumRules } from '../../activities/domain/curriculum-rules';
+import { ProgressActivity } from '../../activities/domain/progress-calculator';
 
 const PRIVILEGED_UPDATE_ROLES = ['owner', 'admin'] as const;
 const SELF_EDITABLE_FIELDS = [
@@ -32,6 +40,7 @@ export class UsersService {
   constructor(
     private usersRepository: UsersRepository,
     private activitiesService: ActivitiesService,
+    private curriculaRepository: CurriculaRepository,
   ) {}
 
   getAllUsers(options: GetAllUsersOptions): Promise<PaginatedUsersResponseDto> {
@@ -117,5 +126,65 @@ export class UsersService {
       throw new NotFoundException(`User with id ${userId} not found`);
     }
     return this.activitiesService.getSummaryByUserId(userId);
+  }
+
+  async getFormandosAptos(): Promise<FormandosAptosResponseDto> {
+    const students = await this.usersRepository.findFormandosWithActivities();
+
+    const curriculumYears = [
+      ...new Set(students.map((s) => s.curriculumYear).filter(Boolean)),
+    ] as CurriculumYear[];
+    const rulesMap = new Map<CurriculumYear, CurriculumRules>();
+    for (const year of curriculumYears) {
+      const rules = await this.curriculaRepository.findRulesByYear(year);
+      if (rules) rulesMap.set(year, rules);
+    }
+
+    const items: FormandoAptoItemDto[] = [];
+    for (const student of students) {
+      const rules = student.curriculumYear
+        ? (rulesMap.get(student.curriculumYear) ?? null)
+        : null;
+      const activities: ProgressActivity[] = student.activities.map((a) => ({
+        status: a.status,
+        class: a.class,
+        hoursEquivalent: a.hoursEquivalent?.toNumber() ?? 0,
+        activityType: a.activity_types
+          ? {
+              id: a.activity_types.id,
+              cod: a.activity_types.cod,
+              label: a.activity_types.label,
+              category: a.activity_types.category,
+              curriculumRules: a.activity_types.curriculumRules,
+            }
+          : null,
+      }));
+
+      const progress = calculateActivityProgress({
+        curriculumRules: rules,
+        course: student.course,
+        activities,
+      });
+      if (!progress.isReadyToGraduate) continue;
+
+      items.push({
+        id: student.id,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        email: student.email,
+        matricula: student.matricula,
+        course: student.course,
+        curriculumYear: student.curriculumYear,
+        hoursEnsino: progress.approvedHoursByCategory[Category.ENSINO],
+        hoursPesquisa: progress.approvedHoursByCategory[Category.PESQUISA],
+        hoursExtensao: progress.approvedHoursByCategory[Category.EXTENSAO],
+        hoursComplementar: progress.approvedHoursByClass[ActivityClass.COMPLEMENTAR],
+        hoursLivre: progress.approvedHoursByClass[ActivityClass.LIVRE],
+        totalHoursApproved: progress.totalHoursApproved,
+      });
+    }
+
+    items.sort((a, b) => a.firstName.localeCompare(b.firstName));
+    return { items, total: items.length };
   }
 }

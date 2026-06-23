@@ -285,4 +285,42 @@ export class UsersRepository {
       this.prisma.users.delete({ where: { id } }),
     ]);
   }
+
+  async findFormandosWithActivities() {
+    return this.prisma.users.findMany({
+      where: {
+        situation: UserSituation.FORMANDO,
+        role: { name: 'member' },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        picture: true,
+        matricula: true,
+        situation: true,
+        course: true,
+        curriculumYear: true,
+        activities: {
+          select: {
+            status: true,
+            class: true,
+            hoursEquivalent: true,
+            activity_types: {
+              select: {
+                id: true,
+                cod: true,
+                label: true,
+                category: true,
+                curriculumRules: {
+                  select: { curriculumYear: true, maxHoursTotal: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
 }
