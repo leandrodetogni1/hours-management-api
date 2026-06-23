@@ -7,7 +7,7 @@ import {
 import { CreateActivityDto } from '../dto/CreateActivityDto';
 import { UpdateActivityDto } from '../dto/UpdateActivityDto';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { CurriculumYear, Prisma, Status } from '@prisma/client';
+import { Category, CurriculumYear, Prisma, Status } from '@prisma/client';
 import {
   ActivityResponseDto,
   CreateActivityResponseDto,
@@ -17,10 +17,25 @@ import { ActivityMapper } from '../mappers/activity.mapper';
 import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
 import { ActivityEventMapper } from '../mappers/activity-event.mapper';
 import { ActivitySummaryResponseDto } from '../dto/ActivitySummaryResponseDto';
+import {
+  SortableActivityField,
+  SortOrder,
+} from '../dto/ActivitiesListQueryDto';
+import { PaginatedActivitiesResponseDto } from '../dto/PaginatedActivitiesResponseDto';
 import { calculateHoursEquivalent } from '../domain/hours-calculator.js';
 import { calculateActivityProgress } from '../domain/progress-calculator.js';
 import { CurriculaRepository } from '../../curricula/repositories/curricula.repository.js';
 import { UploadedActivityFile } from '../activity-file.constants.js';
+
+export interface GetActivitiesOptions {
+  authorId?: string;
+  status?: Status;
+  category?: Category;
+  page: number;
+  pageSize: number;
+  sortBy: SortableActivityField;
+  sortOrder: SortOrder;
+}
 
 const allowedSourceStatuses: Record<Status, Status[]> = {
   [Status.PENDING]: [],
@@ -65,13 +80,40 @@ export class ActivitiesRepository {
     private curriculaRepository: CurriculaRepository,
   ) {}
 
-  async getAll(status?: Status): Promise<ActivityResponseDto[]> {
-    const activities = await this.prisma.activities.findMany({
-      where: status ? { status } : undefined,
-      include: activityInclude,
-      orderBy: { createdAt: 'desc' },
-    });
-    return activities.map((a) => ActivityMapper.toResponseDto(a));
+  async getAllPaginated(
+    options: GetActivitiesOptions,
+  ): Promise<PaginatedActivitiesResponseDto> {
+    const { authorId, status, category, page, pageSize, sortBy, sortOrder } =
+      options;
+
+    const where: Prisma.activitiesWhereInput = {
+      ...(authorId && { authorId }),
+      ...(status && { status }),
+      ...(category && { activity_types: { category } }),
+    };
+
+    const orderBy: Prisma.activitiesOrderByWithRelationInput[] = [
+      { [sortBy]: sortOrder },
+    ];
+
+    const [activities, total] = await this.prisma.$transaction([
+      this.prisma.activities.findMany({
+        where,
+        include: activityInclude,
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.activities.count({ where }),
+    ]);
+
+    return {
+      items: activities.map((a) => ActivityMapper.toResponseDto(a)),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    };
   }
 
   async getByAuthorId(

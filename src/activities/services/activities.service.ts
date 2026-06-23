@@ -5,7 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Status } from '@prisma/client';
-import { ActivitiesRepository } from '../repositories/activities.repository';
+import {
+  ActivitiesRepository,
+  GetActivitiesOptions,
+} from '../repositories/activities.repository';
 import { CreateActivityDto } from '../dto/CreateActivityDto';
 import { UpdateActivityDto } from '../dto/UpdateActivityDto';
 import {
@@ -16,6 +19,7 @@ import {
 } from '../dto/ActivityResponseDto';
 import { ActivityEventResponseDto } from '../dto/ActivityEventResponseDto';
 import { ActivitySummaryResponseDto } from '../dto/ActivitySummaryResponseDto';
+import { PaginatedActivitiesResponseDto } from '../dto/PaginatedActivitiesResponseDto';
 import { JwtUserPayload } from '../../auth/decorators/current-user.decorator';
 import { UploadedActivityFile } from '../activity-file.constants.js';
 
@@ -27,13 +31,19 @@ export class ActivitiesService {
   constructor(private activityRepository: ActivitiesRepository) {}
 
   getAllActivities(
-    authorId?: string,
-    status?: Status,
-  ): Promise<ActivityResponseDto[]> {
-    if (authorId) {
-      return this.activityRepository.getByAuthorId(authorId, status);
-    }
-    return this.activityRepository.getAll(status);
+    options: GetActivitiesOptions,
+  ): Promise<PaginatedActivitiesResponseDto> {
+    return this.activityRepository.getAllPaginated(options);
+  }
+
+  getMyActivities(
+    userId: string,
+    options: Omit<GetActivitiesOptions, 'authorId'>,
+  ): Promise<PaginatedActivitiesResponseDto> {
+    return this.activityRepository.getAllPaginated({
+      ...options,
+      authorId: userId,
+    });
   }
 
   getActivitiesByUserId(

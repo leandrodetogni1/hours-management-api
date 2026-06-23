@@ -35,13 +35,13 @@ import {
 import type { UploadedActivityFile } from './activity-file.constants.js';
 import { UpdateActivityDto } from './dto/UpdateActivityDto.js';
 import {
-  ActivityResponseDto,
   CreateActivityResponseDto,
   DeleteActivityResponseDto,
   UpdateActivityResponseDto,
 } from './dto/ActivityResponseDto.js';
 import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
-import { GetMyActivitiesQueryDto } from './dto/GetMyActivitiesQueryDto.js';
+import { ActivitiesListQueryDto } from './dto/ActivitiesListQueryDto.js';
+import { PaginatedActivitiesResponseDto } from './dto/PaginatedActivitiesResponseDto.js';
 import { TransitionActivityDto } from './dto/TransitionActivityDto.js';
 import { ActivityEventResponseDto } from './dto/ActivityEventResponseDto.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -63,34 +63,46 @@ export class ActivitiesController {
   @Get()
   @ApiEndpoint({
     summary:
-      'Listar atividades — owner/admin/reviewer apenas (filtros opcionais: authorId, status)',
-    description: 'Lista de atividades',
-    type: ActivityResponseDto,
-    isArray: true,
+      'Listar atividades paginadas — owner/admin/reviewer apenas (filtros: authorId, categoria, status; ordenação por createdAt/status/hoursEquivalent)',
+    description:
+      'Lista paginada de atividades. Suporta filtros por authorId, categoria e status; ordenação por createdAt (padrão, desc), status ou hoursEquivalent.',
+    type: PaginatedActivitiesResponseDto,
     roles: PRIVILEGED_ROLES,
   })
   findAll(
     @Query() query: GetActivitiesQueryDto,
-  ): Promise<ActivityResponseDto[]> {
-    return this.activitiesService.getAllActivities(
-      query.authorId,
-      query.status,
-    );
+  ): Promise<PaginatedActivitiesResponseDto> {
+    return this.activitiesService.getAllActivities({
+      authorId: query.authorId,
+      status: query.status,
+      category: query.category,
+      page: query.page,
+      pageSize: query.pageSize,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    });
   }
 
   @Get('me')
   @ApiEndpoint({
     summary:
-      'Listar as atividades do usuário autenticado (filtro opcional por status)',
-    description: 'Lista de atividades do próprio usuário',
-    type: ActivityResponseDto,
-    isArray: true,
+      'Listar as atividades do usuário autenticado, paginadas (filtros por categoria/status; ordenação por createdAt/status/hoursEquivalent)',
+    description:
+      'Lista paginada das atividades do próprio usuário. Suporta filtros por categoria e status; ordenação por createdAt (padrão, desc), status ou hoursEquivalent.',
+    type: PaginatedActivitiesResponseDto,
   })
   findMine(
     @CurrentUser() user: JwtUserPayload,
-    @Query() query: GetMyActivitiesQueryDto,
-  ): Promise<ActivityResponseDto[]> {
-    return this.activitiesService.getActivitiesByUserId(user.sub, query.status);
+    @Query() query: ActivitiesListQueryDto,
+  ): Promise<PaginatedActivitiesResponseDto> {
+    return this.activitiesService.getMyActivities(user.sub, {
+      status: query.status,
+      category: query.category,
+      page: query.page,
+      pageSize: query.pageSize,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    });
   }
 
   @Post()

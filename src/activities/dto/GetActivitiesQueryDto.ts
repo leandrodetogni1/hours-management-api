@@ -1,8 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Status } from '@prisma/client';
-import { IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsOptional, IsUUID } from 'class-validator';
+import { ActivitiesListQueryDto } from './ActivitiesListQueryDto.js';
 
-export class GetActivitiesQueryDto {
+export class GetActivitiesQueryDto extends ActivitiesListQueryDto {
   @ApiPropertyOptional({
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     description: 'Filtrar atividades pelo ID do autor',
@@ -10,15 +10,4 @@ export class GetActivitiesQueryDto {
   @IsOptional()
   @IsUUID('4', { message: 'authorId deve ser um UUID válido' })
   authorId?: string;
-
-  @ApiPropertyOptional({
-    enum: Status,
-    example: Status.APPROVED,
-    description: 'Filtrar pelas atividades com o status informado',
-  })
-  @IsOptional()
-  @IsEnum(Status, {
-    message: 'status deve ser PENDING, VERIFIED, APPROVED ou REJECTED',
-  })
-  status?: Status;
 }
