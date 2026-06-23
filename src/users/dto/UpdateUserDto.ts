@@ -51,7 +51,7 @@ export class UpdateUserDto {
     value !== undefined && value !== null ? String(value) : value,
   )
   @IsString({ message: 'Matrícula deve ser uma string' })
-  @Matches(/^\d+$/, { message: 'Matrícula deve conter apenas números' })
+  @Matches(/^\d{8}$/, { message: 'Matrícula deve ter exatamente 8 dígitos numéricos' })
   matricula?: string;
 
   @ApiPropertyOptional({

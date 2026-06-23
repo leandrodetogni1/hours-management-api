@@ -47,7 +47,7 @@ export class CreateUserDto {
   @Expose()
   @IsString({ message: 'Matrícula deve ser uma string' })
   @IsNotEmpty({ message: 'Matrícula é obrigatória' })
-  @Matches(/^\d+$/, { message: 'Matrícula deve conter apenas números' })
+  @Matches(/^\d{8}$/, { message: 'Matrícula deve ter exatamente 8 dígitos numéricos' })
   matricula: string;
 
   @ApiPropertyOptional({
