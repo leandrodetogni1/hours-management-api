@@ -93,7 +93,7 @@ export class UsersController {
     const { items } = await this.usersService.getFormandosAptos();
 
     if (format === 'pdf') {
-      const buffer = this.exportService.generatePdf(items);
+      const buffer = await this.exportService.generatePdf(items);
       res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="formandos-aptos.pdf"',

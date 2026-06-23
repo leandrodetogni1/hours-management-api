@@ -49,69 +49,68 @@ export class ExportService {
     return Buffer.from(arrayBuffer);
   }
 
-  generatePdf(items: FormandoAptoItemDto[]): Buffer {
-    return this.buildPdf(items);
-  }
+  generatePdf(items: FormandoAptoItemDto[]): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      const doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'landscape' });
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
 
-  private buildPdf(items: FormandoAptoItemDto[]): Buffer {
-    const chunks: Buffer[] = [];
-    const doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'landscape' });
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      const now = new Date().toLocaleDateString('pt-BR');
+      doc.fontSize(14).font('Helvetica-Bold').text('Formandos Aptos — Atividades Complementares', { align: 'center' });
+      doc.fontSize(9).font('Helvetica').text(`Gerado em: ${now}`, { align: 'center' });
+      doc.moveDown();
 
-    const now = new Date().toLocaleDateString('pt-BR');
-    doc.fontSize(14).font('Helvetica-Bold').text('Formandos Aptos — Atividades Complementares', { align: 'center' });
-    doc.fontSize(9).font('Helvetica').text(`Gerado em: ${now}`, { align: 'center' });
-    doc.moveDown();
+      const headers = ['Nome', 'Matrícula', 'Email', 'Curso', 'Ensino', 'Pesquisa', 'Extensão', 'Compl.', 'Livre'];
+      const colWidths = [130, 65, 155, 90, 45, 50, 50, 45, 40];
+      const rowHeight = 18;
+      const startX = 40;
 
-    const headers = ['Nome', 'Matrícula', 'Email', 'Curso', 'Ensino', 'Pesquisa', 'Extensão', 'Compl.', 'Livre'];
-    const colWidths = [130, 65, 155, 90, 45, 50, 50, 45, 40];
-    const rowHeight = 18;
-    const startX = 40;
+      let x = startX;
+      let y = doc.y;
 
-    let x = startX;
-    let y = doc.y;
-
-    doc.fontSize(8).font('Helvetica-Bold');
-    for (let i = 0; i < headers.length; i++) {
-      doc.rect(x, y, colWidths[i], rowHeight).fillAndStroke('#1F4E79', '#1F4E79');
-      doc.fillColor('white').text(headers[i], x + 3, y + 4, { width: colWidths[i] - 6, lineBreak: false });
-      x += colWidths[i];
-    }
-    doc.fillColor('black');
-
-    y += rowHeight;
-    doc.font('Helvetica').fontSize(7);
-
-    for (let idx = 0; idx < items.length; idx++) {
-      const item = items[idx];
-      const row = [
-        `${item.firstName} ${item.lastName}`,
-        item.matricula ?? '',
-        item.email,
-        item.course ?? '',
-        String(item.hoursEnsino),
-        String(item.hoursPesquisa),
-        String(item.hoursExtensao),
-        String(item.hoursComplementar),
-        String(item.hoursLivre),
-      ];
-
-      const bg = idx % 2 === 0 ? '#F0F4F8' : '#FFFFFF';
-      x = startX;
-      for (let i = 0; i < row.length; i++) {
-        doc.rect(x, y, colWidths[i], rowHeight).fillAndStroke(bg, '#CCCCCC');
-        doc.fillColor('black').text(row[i], x + 3, y + 4, { width: colWidths[i] - 6, lineBreak: false });
+      doc.fontSize(8).font('Helvetica-Bold');
+      for (let i = 0; i < headers.length; i++) {
+        doc.rect(x, y, colWidths[i], rowHeight).fillAndStroke('#1F4E79', '#1F4E79');
+        doc.fillColor('white').text(headers[i], x + 3, y + 4, { width: colWidths[i] - 6, lineBreak: false });
         x += colWidths[i];
       }
+      doc.fillColor('black');
+
       y += rowHeight;
+      doc.font('Helvetica').fontSize(7);
 
-      if (y > doc.page.height - 60) {
-        doc.addPage({ layout: 'landscape' });
-        y = 40;
+      for (let idx = 0; idx < items.length; idx++) {
+        const item = items[idx];
+        const row = [
+          `${item.firstName} ${item.lastName}`,
+          item.matricula ?? '',
+          item.email,
+          item.course ?? '',
+          String(item.hoursEnsino),
+          String(item.hoursPesquisa),
+          String(item.hoursExtensao),
+          String(item.hoursComplementar),
+          String(item.hoursLivre),
+        ];
+
+        const bg = idx % 2 === 0 ? '#F0F4F8' : '#FFFFFF';
+        x = startX;
+        for (let i = 0; i < row.length; i++) {
+          doc.rect(x, y, colWidths[i], rowHeight).fillAndStroke(bg, '#CCCCCC');
+          doc.fillColor('black').text(row[i], x + 3, y + 4, { width: colWidths[i] - 6, lineBreak: false });
+          x += colWidths[i];
+        }
+        y += rowHeight;
+
+        if (y > doc.page.height - 60) {
+          doc.addPage({ layout: 'landscape' });
+          y = 40;
+        }
       }
-    }
 
-    doc.end();
-    return Buffer.concat(chunks);
+      doc.end();
+    });
   }
 }
