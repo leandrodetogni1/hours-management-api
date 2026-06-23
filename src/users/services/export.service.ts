@@ -62,8 +62,13 @@ export class ExportService {
       doc.fontSize(9).font('Helvetica').text(`Gerado em: ${now}`, { align: 'center' });
       doc.moveDown();
 
+      const COURSE_LABELS: Record<string, string> = {
+        CIENCIA_DA_COMPUTACAO: 'Ciência da Comp.',
+        ENGENHARIA_DA_COMPUTACAO: 'Eng. da Computação',
+      };
+
       const headers = ['Nome', 'Matrícula', 'Email', 'Curso', 'Ensino', 'Pesquisa', 'Extensão', 'Compl.', 'Livre'];
-      const colWidths = [130, 65, 155, 90, 45, 50, 50, 45, 40];
+      const colWidths = [140, 62, 160, 125, 42, 48, 48, 42, 35];
       const rowHeight = 18;
       const startX = 40;
 
@@ -87,7 +92,7 @@ export class ExportService {
           `${item.firstName} ${item.lastName}`,
           item.matricula ?? '',
           item.email,
-          item.course ?? '',
+          COURSE_LABELS[item.course ?? ''] ?? item.course ?? '',
           String(item.hoursEnsino),
           String(item.hoursPesquisa),
           String(item.hoursExtensao),
