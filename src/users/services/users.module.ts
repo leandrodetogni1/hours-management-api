@@ -6,7 +6,11 @@ import { ActivitiesServiceModule } from '../../activities/services/activities.mo
 import { CurriculaRepositoryModule } from '../../curricula/repositories/curricula.module';
 
 @Module({
-  imports: [UsersRepositoriesModule, ActivitiesServiceModule, CurriculaRepositoryModule],
+  imports: [
+    UsersRepositoriesModule,
+    ActivitiesServiceModule,
+    CurriculaRepositoryModule,
+  ],
   providers: [UsersService, ExportService],
   exports: [UsersService, ExportService],
 })

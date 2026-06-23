@@ -20,7 +20,12 @@ import {
   FormandosAptosResponseDto,
 } from '../dto/FormandoAptoResponseDto';
 import { JwtUserPayload } from '../../auth/decorators/current-user.decorator';
-import { ActivityClass, Category, CurriculumYear, Status } from '@prisma/client';
+import {
+  ActivityClass,
+  Category,
+  CurriculumYear,
+  Status,
+} from '@prisma/client';
 import { calculateActivityProgress } from '../../activities/domain/progress-calculator';
 import { CurriculumRules } from '../../activities/domain/curriculum-rules';
 import { ProgressActivity } from '../../activities/domain/progress-calculator';
@@ -178,7 +183,8 @@ export class UsersService {
         hoursEnsino: progress.approvedHoursByCategory[Category.ENSINO],
         hoursPesquisa: progress.approvedHoursByCategory[Category.PESQUISA],
         hoursExtensao: progress.approvedHoursByCategory[Category.EXTENSAO],
-        hoursComplementar: progress.approvedHoursByClass[ActivityClass.COMPLEMENTAR],
+        hoursComplementar:
+          progress.approvedHoursByClass[ActivityClass.COMPLEMENTAR],
         hoursLivre: progress.approvedHoursByClass[ActivityClass.LIVRE],
         totalHoursApproved: progress.totalHoursApproved,
       });

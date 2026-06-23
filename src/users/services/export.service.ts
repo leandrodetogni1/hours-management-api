@@ -52,14 +52,26 @@ export class ExportService {
   generatePdf(items: FormandoAptoItemDto[]): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      const doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'landscape' });
+      const doc = new PDFDocument({
+        margin: 40,
+        size: 'A4',
+        layout: 'landscape',
+      });
       doc.on('data', (chunk: Buffer) => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
       const now = new Date().toLocaleDateString('pt-BR');
-      doc.fontSize(14).font('Helvetica-Bold').text('Formandos Aptos — Atividades Complementares', { align: 'center' });
-      doc.fontSize(9).font('Helvetica').text(`Gerado em: ${now}`, { align: 'center' });
+      doc
+        .fontSize(14)
+        .font('Helvetica-Bold')
+        .text('Formandos Aptos — Atividades Complementares', {
+          align: 'center',
+        });
+      doc
+        .fontSize(9)
+        .font('Helvetica')
+        .text(`Gerado em: ${now}`, { align: 'center' });
       doc.moveDown();
 
       const COURSE_LABELS: Record<string, string> = {
@@ -67,7 +79,17 @@ export class ExportService {
         ENGENHARIA_DA_COMPUTACAO: 'Eng. da Computação',
       };
 
-      const headers = ['Nome', 'Matrícula', 'Email', 'Curso', 'Ensino', 'Pesquisa', 'Extensão', 'Compl.', 'Livre'];
+      const headers = [
+        'Nome',
+        'Matrícula',
+        'Email',
+        'Curso',
+        'Ensino',
+        'Pesquisa',
+        'Extensão',
+        'Compl.',
+        'Livre',
+      ];
       const colWidths = [140, 62, 160, 125, 42, 48, 48, 42, 35];
       const rowHeight = 18;
       const startX = 40;
@@ -77,8 +99,13 @@ export class ExportService {
 
       doc.fontSize(8).font('Helvetica-Bold');
       for (let i = 0; i < headers.length; i++) {
-        doc.rect(x, y, colWidths[i], rowHeight).fillAndStroke('#1F4E79', '#1F4E79');
-        doc.fillColor('white').text(headers[i], x + 3, y + 4, { width: colWidths[i] - 6, lineBreak: false });
+        doc
+          .rect(x, y, colWidths[i], rowHeight)
+          .fillAndStroke('#1F4E79', '#1F4E79');
+        doc.fillColor('white').text(headers[i], x + 3, y + 4, {
+          width: colWidths[i] - 6,
+          lineBreak: false,
+        });
         x += colWidths[i];
       }
       doc.fillColor('black');
@@ -104,7 +131,10 @@ export class ExportService {
         x = startX;
         for (let i = 0; i < row.length; i++) {
           doc.rect(x, y, colWidths[i], rowHeight).fillAndStroke(bg, '#CCCCCC');
-          doc.fillColor('black').text(row[i], x + 3, y + 4, { width: colWidths[i] - 6, lineBreak: false });
+          doc.fillColor('black').text(row[i], x + 3, y + 4, {
+            width: colWidths[i] - 6,
+            lineBreak: false,
+          });
           x += colWidths[i];
         }
         y += rowHeight;

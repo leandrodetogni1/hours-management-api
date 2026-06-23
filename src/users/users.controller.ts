@@ -71,8 +71,10 @@ export class UsersController {
 
   @Get('formandos-aptos')
   @ApiEndpoint({
-    summary: 'Listar formandos que completaram todas as horas — owner/admin/reviewer apenas',
-    description: 'Retorna alunos com situation=FORMANDO e isReadyToGraduate=true, com horas por categoria',
+    summary:
+      'Listar formandos que completaram todas as horas — owner/admin/reviewer apenas',
+    description:
+      'Retorna alunos com situation=FORMANDO e isReadyToGraduate=true, com horas por categoria',
     type: FormandosAptosResponseDto,
     roles: PRIVILEGED_ROLES,
   })
@@ -82,7 +84,8 @@ export class UsersController {
 
   @Get('formandos-aptos/export')
   @ApiEndpoint({
-    summary: 'Exportar formandos aptos em XLSX ou PDF — owner/admin/reviewer apenas',
+    summary:
+      'Exportar formandos aptos em XLSX ou PDF — owner/admin/reviewer apenas',
     description: 'Download do arquivo. Use ?format=xlsx ou ?format=pdf',
     roles: PRIVILEGED_ROLES,
   })
@@ -103,7 +106,8 @@ export class UsersController {
     } else {
       const buffer = await this.exportService.generateXlsx(items);
       res.set({
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Type':
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': 'attachment; filename="formandos-aptos.xlsx"',
         'Content-Length': buffer.length,
       });
