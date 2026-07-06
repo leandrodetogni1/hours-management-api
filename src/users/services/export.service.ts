@@ -3,6 +3,16 @@ import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 import { FormandoAptoItemDto } from '../dto/FormandoAptoResponseDto.js';
 
+const COURSE_LABELS: Record<string, string> = {
+  CIENCIA_DA_COMPUTACAO: 'Ciência da Computação',
+  ENGENHARIA_DA_COMPUTACAO: 'Engenharia de Computação',
+};
+
+function courseLabel(course: string | null): string {
+  if (!course) return '';
+  return COURSE_LABELS[course] ?? course;
+}
+
 const COLUMNS = [
   { header: 'Nome', key: 'nome', width: 30 },
   { header: 'Matrícula', key: 'matricula', width: 15 },
@@ -36,7 +46,7 @@ export class ExportService {
         nome: `${item.firstName} ${item.lastName}`,
         matricula: item.matricula ?? '',
         email: item.email,
-        curso: item.course ?? '',
+        curso: courseLabel(item.course),
         ensino: item.hoursEnsino,
         pesquisa: item.hoursPesquisa,
         extensao: item.hoursExtensao,
@@ -73,11 +83,6 @@ export class ExportService {
         .font('Helvetica')
         .text(`Gerado em: ${now}`, { align: 'center' });
       doc.moveDown();
-
-      const COURSE_LABELS: Record<string, string> = {
-        CIENCIA_DA_COMPUTACAO: 'Ciência da Comp.',
-        ENGENHARIA_DA_COMPUTACAO: 'Eng. da Computação',
-      };
 
       const headers = [
         'Nome',
@@ -119,7 +124,7 @@ export class ExportService {
           `${item.firstName} ${item.lastName}`,
           item.matricula ?? '',
           item.email,
-          COURSE_LABELS[item.course ?? ''] ?? item.course ?? '',
+          courseLabel(item.course),
           String(item.hoursEnsino),
           String(item.hoursPesquisa),
           String(item.hoursExtensao),
