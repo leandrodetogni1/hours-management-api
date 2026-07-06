@@ -1,28 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { Category, CurriculumYear, UserSituation } from '@prisma/client';
+import { CurriculumYear, UserSituation } from '@prisma/client';
 import {
   DashboardRepository,
   StudentWithActivities,
 } from '../repositories/dashboard.repository.js';
 import {
   AdminDashboardResponseDto,
-  CategoryGapDto,
   FormandoAtRiskDto,
   RegularStudentProgressDto,
 } from '../dto/AdminDashboardResponseDto.js';
 import {
   calculateActivityProgress,
-  CategoryProgress,
   ProgressActivity,
 } from '../../activities/domain/progress-calculator.js';
+import { calculateFormandoGaps } from '../domain/formando-gaps.js';
 import { CurriculumRules } from '../../activities/domain/curriculum-rules.js';
 import { CurriculaRepository } from '../../curricula/repositories/curricula.repository.js';
-
-const CATEGORY_LABELS_PT: Record<Category, string> = {
-  [Category.ENSINO]: 'Ensino',
-  [Category.PESQUISA]: 'Pesquisa',
-  [Category.EXTENSAO]: 'Extensão',
-};
 
 @Injectable()
 export class DashboardService {
@@ -126,42 +119,7 @@ export class DashboardService {
       activities: formando.activities.map(toProgressActivity),
     });
 
-    const categoryGaps: CategoryGapDto[] = progress.categoryProgress.map(
-      (cp) => ({
-        category: cp.category,
-        achieved: cp.hoursAchieved,
-        required: cp.minRequired,
-        gap:
-          cp.minRequired !== null
-            ? Math.max(cp.minRequired - cp.hoursAchieved, 0)
-            : 0,
-      }),
-    );
-
-    const complementaryGap =
-      progress.complementaryProgress.minRequired !== null
-        ? Math.max(
-            progress.complementaryProgress.minRequired -
-              progress.complementaryProgress.totalCountedHours,
-            0,
-          )
-        : 0;
-
-    const freeGap = Math.max(
-      progress.freeProgress.minRequired - progress.freeProgress.totalHours,
-      0,
-    );
-
-    const totalGap =
-      categoryGaps.reduce((sum, g) => sum + g.gap, 0) +
-      complementaryGap +
-      freeGap;
-
-    const blockers = buildBlockers(
-      complementaryGap,
-      freeGap,
-      progress.categoryProgress,
-    );
+    const gaps = calculateFormandoGaps(progress, curriculumRules);
 
     return {
       user: {
@@ -175,11 +133,11 @@ export class DashboardService {
         curriculumYear: formando.curriculumYear,
       },
       totalHoursApproved: progress.totalHoursApproved,
-      complementaryGap: round2(complementaryGap),
-      freeGap: round2(freeGap),
-      totalGap: round2(totalGap),
-      categoryGaps,
-      blockers,
+      complementaryGap: gaps.complementaryGap,
+      freeGap: gaps.freeGap,
+      totalGap: gaps.totalGap,
+      categoryGaps: gaps.categoryGaps,
+      blockers: gaps.blockers,
       isReadyToGraduate: progress.isReadyToGraduate,
     };
   }
@@ -234,42 +192,4 @@ function toProgressActivity(
         }
       : null,
   };
-}
-
-function buildBlockers(
-  complementaryGap: number,
-  freeGap: number,
-  categoryProgress: CategoryProgress[],
-): string[] {
-  const messages: string[] = [];
-
-  for (const cp of categoryProgress) {
-    if (cp.minRequired === null) continue;
-    const gap = Math.max(cp.minRequired - cp.hoursAchieved, 0);
-    if (gap > 0) {
-      messages.push(
-        `Faltam ${round2(gap)}h em ${CATEGORY_LABELS_PT[cp.category]}`,
-      );
-    }
-  }
-
-  if (complementaryGap > 0) {
-    messages.push(
-      `Faltam ${round2(complementaryGap)}h no total de Complementares`,
-    );
-  }
-
-  if (freeGap > 0) {
-    messages.push(`Faltam ${round2(freeGap)}h em Formação Livre`);
-  }
-
-  if (messages.length === 0) {
-    messages.push('Atende todos os requisitos mínimos');
-  }
-
-  return messages;
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
 }

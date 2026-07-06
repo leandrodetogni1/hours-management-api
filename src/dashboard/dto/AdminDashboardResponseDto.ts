@@ -70,7 +70,7 @@ export class FormandoAtRiskDto {
   @ApiProperty({
     example: 225,
     description:
-      'Soma das pendências por categoria + complementaryGap + freeGap. Usado para ordenação.',
+      'Estimativa mínima de horas ainda necessárias. Considera a regra de mínimo em N categorias (minCategoriesRequired), que as horas de categoria também contam no total de Complementares e que o excedente de Complementares migra para Formação Livre. Usado para ordenação.',
   })
   totalGap: number;
 
@@ -80,9 +80,9 @@ export class FormandoAtRiskDto {
   @ApiProperty({
     type: [String],
     example: [
-      'Faltam 40h em Ensino',
-      'Faltam 30h em Pesquisa',
+      'Falta atingir o mínimo em mais 1 categoria: Extensão (faltam 110h), Pesquisa (faltam 120h)',
       'Faltam 65h no total de Complementares',
+      'Faltam 217h em Formação Livre',
     ],
     description: 'Mensagens humanas para exibir na UI',
   })
@@ -91,7 +91,7 @@ export class FormandoAtRiskDto {
   @ApiProperty({
     example: false,
     description:
-      'Todos os mínimos (categoria, total, formação livre) foram atingidos',
+      'Regra de categorias (mínimo em N), total de Complementares e Formação Livre foram atingidos',
   })
   isReadyToGraduate: boolean;
 }
