@@ -531,13 +531,23 @@ export class ActivitiesRepository {
     return activity?.authorId ?? null;
   }
 
-  async findStatusAndOwner(
-    activityId: string,
-  ): Promise<{ status: Status | null; authorId: string | null } | null> {
+  async findStatusAndOwner(activityId: string): Promise<{
+    status: Status | null;
+    authorId: string | null;
+    event: string | null;
+  } | null> {
     return this.prisma.activities.findUnique({
       where: { id: activityId },
-      select: { status: true, authorId: true },
+      select: { status: true, authorId: true, event: true },
     });
+  }
+
+  async findById(activityId: string): Promise<ActivityResponseDto | null> {
+    const activity = await this.prisma.activities.findUnique({
+      where: { id: activityId },
+      include: activityInclude,
+    });
+    return activity ? ActivityMapper.toResponseDto(activity) : null;
   }
 
   async deleteActivity(activityId: string): Promise<void> {

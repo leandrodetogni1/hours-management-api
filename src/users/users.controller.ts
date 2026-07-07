@@ -14,6 +14,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import { UsersService } from './services/users.service.js';
+import type { DeletedUserSnapshot } from './services/users.service.js';
 import { ExportService } from './services/export.service.js';
 import { CreateUserDto } from './dto/CreateUserDto.js';
 import { UpdateUserDto } from './dto/UpdateUserDto.js';
@@ -29,6 +30,7 @@ import { PaginatedUsersResponseDto } from './dto/PaginatedUsersResponseDto.js';
 import { FormandosAptosResponseDto } from './dto/FormandoAptoResponseDto.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
 import { Audit } from '../audit/audit.decorator.js';
+import { defaultMetadata } from '../audit/audit.interceptor.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
 
@@ -128,7 +130,12 @@ export class UsersController {
   }
 
   @Post()
-  @Audit({ action: 'user.created', entityType: 'user' })
+  @Audit({
+    action: 'user.created',
+    entityType: 'user',
+    resolveMetadata: (_req, result) =>
+      defaultMetadata((result as CreateUserResponseDto | undefined)?.user),
+  })
   @ApiEndpoint({
     summary: 'Criar um novo usuário (admin)',
     status: HttpStatus.CREATED,
@@ -201,7 +208,7 @@ export class UsersController {
     params: [ID_PARAM],
     roles: ADMIN_ROLES,
   })
-  deleteUser(@Param('id') id: string): Promise<void> {
+  deleteUser(@Param('id') id: string): Promise<DeletedUserSnapshot> {
     return this.usersService.deleteUser(id);
   }
 }

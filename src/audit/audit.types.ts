@@ -8,4 +8,5 @@ export interface AuditLogEntry {
   statusCode: number | null;
   ip: string | null;
   userAgent: string | null;
+  metadata: Record<string, unknown> | null;
 }

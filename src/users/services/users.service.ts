@@ -30,6 +30,12 @@ import { calculateActivityProgress } from '../../activities/domain/progress-calc
 import { CurriculumRules } from '../../activities/domain/curriculum-rules';
 import { ProgressActivity } from '../../activities/domain/progress-calculator';
 
+export interface DeletedUserSnapshot {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 const PRIVILEGED_UPDATE_ROLES = ['owner', 'admin'] as const;
 const SELF_EDITABLE_FIELDS = [
   'firstName',
@@ -108,8 +114,14 @@ export class UsersService {
     return this.usersRepository.updateUser(id, data);
   }
 
-  deleteUser(id: string): Promise<void> {
-    return this.usersRepository.deleteUser(id);
+  async deleteUser(id: string): Promise<DeletedUserSnapshot> {
+    const user = await this.getUserById(id);
+    await this.usersRepository.deleteUser(id);
+    return {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    };
   }
 
   async getUserActivities(

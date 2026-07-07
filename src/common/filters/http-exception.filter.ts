@@ -83,6 +83,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       method: request.method,
       path,
       statusCode: status,
+      metadata: null,
       ip: clientIp(request),
       userAgent:
         typeof userAgentHeader === 'string'

@@ -47,6 +47,14 @@ export class AuditLogResponseDto {
   @ApiPropertyOptional({ example: 'Mozilla/5.0 ...' })
   userAgent: string | null;
 
+  @ApiPropertyOptional({
+    example: { label: 'João Silva', email: 'joao@ufpel.edu.br' },
+    nullable: true,
+    description:
+      'Snapshot do alvo capturado no momento da escrita (label, email, role, userId)',
+  })
+  metadata: Record<string, unknown> | null;
+
   @ApiProperty({ example: '2025-03-01T12:34:56.000Z' })
   createdAt: string | null;
 

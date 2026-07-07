@@ -21,7 +21,14 @@ export class AuditRepository {
   constructor(private prisma: PrismaService) {}
 
   async create(entry: AuditLogEntry): Promise<void> {
-    await this.prisma.audit_logs.create({ data: entry });
+    await this.prisma.audit_logs.create({
+      data: {
+        ...entry,
+        metadata: (entry.metadata ?? undefined) as
+          | Prisma.InputJsonValue
+          | undefined,
+      },
+    });
   }
 
   async getMany(query: GetAuditLogsQueryDto): Promise<AuditLogsPageDto> {

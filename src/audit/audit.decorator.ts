@@ -17,6 +17,10 @@ export interface AuditOptions {
     req: AuditRequestContext,
     result: unknown,
   ) => string | null | undefined;
+  resolveMetadata?: (
+    req: AuditRequestContext,
+    result: unknown,
+  ) => Record<string, unknown> | null | undefined;
 }
 
 export const Audit = (options: AuditOptions) => SetMetadata(AUDIT_KEY, options);

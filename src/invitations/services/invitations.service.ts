@@ -5,6 +5,7 @@ import {
   InvitationResponseDto,
 } from '../dto/InvitationResponseDto';
 import { InvitationsRepository } from '../repositories/invitations.repository';
+import type { DeletedInvitationSnapshot } from '../repositories/invitations.repository';
 
 @Injectable()
 export class InvitationsService {
@@ -21,7 +22,7 @@ export class InvitationsService {
     return this.invitationsRepository.createInvitation(dto, createdBy);
   }
 
-  deleteInvitation(id: string): Promise<void> {
+  deleteInvitation(id: string): Promise<DeletedInvitationSnapshot> {
     return this.invitationsRepository.deleteInvitation(id);
   }
 }

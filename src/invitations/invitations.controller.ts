@@ -18,6 +18,8 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
 import { Audit } from '../audit/audit.decorator.js';
+import { defaultMetadata } from '../audit/audit.interceptor.js';
+import type { DeletedInvitationSnapshot } from './repositories/invitations.repository.js';
 
 const ID_PARAM = { name: 'id', description: 'UUID do convite' };
 const OWNER_ROLES = ['owner'];
@@ -41,7 +43,14 @@ export class InvitationsController {
   }
 
   @Post()
-  @Audit({ action: 'invitation.created', entityType: 'invitation' })
+  @Audit({
+    action: 'invitation.created',
+    entityType: 'invitation',
+    resolveMetadata: (_req, result) =>
+      defaultMetadata(
+        (result as CreateInvitationResponseDto | undefined)?.invitation,
+      ),
+  })
   @ApiEndpoint({
     summary:
       'Criar convite (email + role) que será consumido no primeiro login Google do convidado — owner apenas',
@@ -73,7 +82,9 @@ export class InvitationsController {
     params: [ID_PARAM],
     roles: OWNER_ROLES,
   })
-  deleteInvitation(@Param('id') id: string): Promise<void> {
+  deleteInvitation(
+    @Param('id') id: string,
+  ): Promise<DeletedInvitationSnapshot> {
     return this.invitationsService.deleteInvitation(id);
   }
 }

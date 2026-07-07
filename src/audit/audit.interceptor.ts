@@ -52,7 +52,12 @@ export class AuditInterceptor implements NestInterceptor {
         const res = context
           .switchToHttp()
           .getResponse<{ statusCode?: number }>();
-        const entry = this.buildEntry(req, options, result, res?.statusCode);
+        const entry = this.buildEntry(
+          req,
+          options,
+          unwrapEnvelope(result),
+          res?.statusCode,
+        );
         void this.auditService.safeRecord(entry);
       }),
     );
@@ -83,6 +88,10 @@ export class AuditInterceptor implements NestInterceptor {
         ? userAgentHeader.slice(0, 500)
         : null;
 
+    const metadata = options?.resolveMetadata
+      ? (options.resolveMetadata(req, result) ?? null)
+      : defaultMetadata(result);
+
     return {
       actorId,
       action,
@@ -93,8 +102,58 @@ export class AuditInterceptor implements NestInterceptor {
       statusCode: statusCode ?? null,
       ip: clientIp(req),
       userAgent,
+      metadata,
     };
   }
+}
+
+export function unwrapEnvelope(result: unknown): unknown {
+  if (
+    typeof result === 'object' &&
+    result !== null &&
+    !Array.isArray(result) &&
+    Object.keys(result).length === 1 &&
+    'data' in result
+  ) {
+    return (result as Record<string, unknown>).data;
+  }
+  return result;
+}
+
+export function defaultMetadata(
+  result: unknown,
+): Record<string, unknown> | null {
+  if (typeof result !== 'object' || result === null || Array.isArray(result)) {
+    return null;
+  }
+
+  const source = result as Record<string, unknown>;
+  const metadata: Record<string, unknown> = {};
+
+  const firstName =
+    typeof source.firstName === 'string' ? source.firstName : '';
+  const lastName = typeof source.lastName === 'string' ? source.lastName : '';
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
+  const label =
+    fullName ||
+    [source.event, source.title, source.name, source.email].find(
+      (value): value is string => typeof value === 'string' && value.length > 0,
+    );
+  if (label) {
+    metadata.label = label;
+  }
+
+  if (typeof source.email === 'string') {
+    metadata.email = source.email;
+  }
+  if (typeof source.role === 'string') {
+    metadata.role = source.role;
+  }
+  if (typeof source.userId === 'string') {
+    metadata.userId = source.userId;
+  }
+
+  return Object.keys(metadata).length > 0 ? metadata : null;
 }
 
 export function entityFromPath(path: string | null): string | null {

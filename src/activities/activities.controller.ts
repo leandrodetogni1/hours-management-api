@@ -26,7 +26,10 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { ActivitiesService } from './services/activities.service.js';
+import {
+  ActivitiesService,
+  DeletedActivityResult,
+} from './services/activities.service.js';
 import { CreateActivityDto } from './dto/CreateActivityDto.js';
 import {
   ALLOWED_ACTIVITY_FILE_MIME_TYPE_REGEX,
@@ -35,8 +38,8 @@ import {
 import type { UploadedActivityFile } from './activity-file.constants.js';
 import { UpdateActivityDto } from './dto/UpdateActivityDto.js';
 import {
+  ActivityResponseDto,
   CreateActivityResponseDto,
-  DeleteActivityResponseDto,
   UpdateActivityResponseDto,
 } from './dto/ActivityResponseDto.js';
 import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
@@ -48,11 +51,29 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
 import { ApiEndpoint } from '../common/decorators/api-endpoint.decorator.js';
 import { Audit } from '../audit/audit.decorator.js';
+import type { AuditRequestContext } from '../audit/audit.decorator.js';
 
 const ID_PARAM = { name: 'id', description: 'UUID da atividade' };
 const REVIEWER_ROLES = ['admin', 'reviewer'];
 const APPROVER_ROLES = ['owner', 'admin'];
 const PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'];
+
+const activityAuditMetadata = (
+  _req: AuditRequestContext,
+  result: unknown,
+): Record<string, unknown> | null => {
+  const activity = (result as { activity?: ActivityResponseDto } | undefined)
+    ?.activity;
+  if (!activity) return null;
+  const metadata: Record<string, unknown> = {};
+  if (typeof activity.event === 'string' && activity.event.length > 0) {
+    metadata.label = activity.event;
+  }
+  if (typeof activity.authorId === 'string') {
+    metadata.userId = activity.authorId;
+  }
+  return Object.keys(metadata).length > 0 ? metadata : null;
+};
 
 @ApiTags('Activities')
 @ApiBearerAuth()
@@ -105,8 +126,35 @@ export class ActivitiesController {
     });
   }
 
+  @Get(':id')
+  @ApiEndpoint({
+    summary:
+      'Buscar uma atividade por ID — dono da atividade ou owner/admin/reviewer',
+    description: 'Atividade encontrada',
+    type: ActivityResponseDto,
+    params: [ID_PARAM],
+    errors: [
+      {
+        status: 403,
+        description:
+          'Acesso negado (apenas o dono da atividade ou owner/admin/reviewer)',
+      },
+      { status: 404, description: 'Atividade não encontrada' },
+    ],
+  })
+  getActivityById(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id') id: string,
+  ): Promise<ActivityResponseDto> {
+    return this.activitiesService.getActivityById(id, user);
+  }
+
   @Post()
-  @Audit({ action: 'activity.created', entityType: 'activity' })
+  @Audit({
+    action: 'activity.created',
+    entityType: 'activity',
+    resolveMetadata: activityAuditMetadata,
+  })
   @ApiEndpoint({
     summary:
       'Criar uma nova atividade (authorId é derivado do JWT, body não precisa enviar). Aceita multipart/form-data com um arquivo opcional de certificado',
@@ -165,7 +213,11 @@ export class ActivitiesController {
   }
 
   @Patch(':id')
-  @Audit({ action: 'activity.updated', entityType: 'activity' })
+  @Audit({
+    action: 'activity.updated',
+    entityType: 'activity',
+    resolveMetadata: activityAuditMetadata,
+  })
   @ApiEndpoint({
     summary:
       'Editar uma atividade PENDING — dono da atividade ou owner/admin/reviewer (apenas campos enviados são alterados; hoursEquivalent é recalculado). Aceita multipart/form-data para anexar/substituir o arquivo, ou removeFile=true para removê-lo',
@@ -242,8 +294,8 @@ export class ActivitiesController {
   @ApiEndpoint({
     summary:
       'Deletar uma atividade — member apenas as próprias e em PENDING; owner/admin qualquer atividade; reviewer não pode',
+    status: HttpStatus.NO_CONTENT,
     description: 'Atividade deletada',
-    type: DeleteActivityResponseDto,
     params: [ID_PARAM],
     errors: [
       {
@@ -262,7 +314,7 @@ export class ActivitiesController {
   deleteActivity(
     @CurrentUser() user: JwtUserPayload,
     @Param('id') id: string,
-  ): Promise<DeleteActivityResponseDto> {
+  ): Promise<DeletedActivityResult> {
     return this.activitiesService.deleteActivity(id, user);
   }
 
@@ -324,7 +376,11 @@ export class ActivitiesController {
   }
 
   @Patch(':id/approve')
-  @Audit({ action: 'activity.approved', entityType: 'activity' })
+  @Audit({
+    action: 'activity.approved',
+    entityType: 'activity',
+    resolveMetadata: activityAuditMetadata,
+  })
   @ApiEndpoint({
     summary:
       'Aprovar uma atividade (a partir de PENDING ou VERIFIED) — owner/admin apenas',
@@ -350,7 +406,11 @@ export class ActivitiesController {
   }
 
   @Patch(':id/reject')
-  @Audit({ action: 'activity.rejected', entityType: 'activity' })
+  @Audit({
+    action: 'activity.rejected',
+    entityType: 'activity',
+    resolveMetadata: activityAuditMetadata,
+  })
   @ApiEndpoint({
     summary:
       'Rejeitar uma atividade (a partir de PENDING ou VERIFIED) — admin/reviewer',
@@ -376,7 +436,11 @@ export class ActivitiesController {
   }
 
   @Patch(':id/verify')
-  @Audit({ action: 'activity.verified', entityType: 'activity' })
+  @Audit({
+    action: 'activity.verified',
+    entityType: 'activity',
+    resolveMetadata: activityAuditMetadata,
+  })
   @ApiEndpoint({
     summary: 'Verificar uma atividade (a partir de PENDING) — admin/reviewer',
     description: 'Atividade verificada',

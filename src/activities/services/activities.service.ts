@@ -26,6 +26,11 @@ import { UploadedActivityFile } from '../activity-file.constants.js';
 const EVENTS_PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'] as const;
 const EDIT_PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'] as const;
 
+export type DeletedActivityResult = DeleteActivityResponseDto & {
+  event: string | null;
+  userId: string | null;
+};
+
 @Injectable()
 export class ActivitiesService {
   constructor(private activityRepository: ActivitiesRepository) {}
@@ -136,7 +141,7 @@ export class ActivitiesService {
   async deleteActivity(
     activityId: string,
     currentUser: JwtUserPayload,
-  ): Promise<DeleteActivityResponseDto> {
+  ): Promise<DeletedActivityResult> {
     const activity =
       await this.activityRepository.findStatusAndOwner(activityId);
     if (!activity) {
@@ -167,7 +172,33 @@ export class ActivitiesService {
 
     await this.activityRepository.deleteActivity(activityId);
 
-    return { message: 'Activity deleted successfully' };
+    return {
+      message: 'Activity deleted successfully',
+      event: activity.event,
+      userId: activity.authorId,
+    };
+  }
+
+  async getActivityById(
+    activityId: string,
+    currentUser: JwtUserPayload,
+  ): Promise<ActivityResponseDto> {
+    const activity = await this.activityRepository.findById(activityId);
+    if (!activity) {
+      throw new NotFoundException(`Activity with id ${activityId} not found`);
+    }
+
+    const isPrivileged =
+      typeof currentUser.role === 'string' &&
+      (EVENTS_PRIVILEGED_ROLES as readonly string[]).includes(currentUser.role);
+
+    if (!isPrivileged && currentUser.sub !== activity.authorId) {
+      throw new ForbiddenException(
+        'Acesso negado. Apenas o dono da atividade ou owner/admin/reviewer',
+      );
+    }
+
+    return activity;
   }
 
   async getActivityEvents(

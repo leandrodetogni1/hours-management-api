@@ -185,6 +185,7 @@ model audit_logs {
   statusCode Int?     @map("statuscode")
   ip         String?  @db.VarChar(64)
   userAgent  String?  @map("useragent") @db.VarChar(500)
+  metadata   Json?
   createdAt  DateTime @default(now()) @map("createdat") @db.Timestamp(6)
   actor      users?   @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 

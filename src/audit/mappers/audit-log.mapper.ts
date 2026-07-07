@@ -11,6 +11,7 @@ export class AuditLogMapper {
     statusCode: number | null;
     ip: string | null;
     userAgent: string | null;
+    metadata: unknown;
     createdAt: Date | null;
     actor: {
       id: string;
@@ -30,6 +31,12 @@ export class AuditLogMapper {
       statusCode: log.statusCode,
       ip: log.ip,
       userAgent: log.userAgent,
+      metadata:
+        typeof log.metadata === 'object' &&
+        log.metadata !== null &&
+        !Array.isArray(log.metadata)
+          ? (log.metadata as Record<string, unknown>)
+          : null,
       createdAt: log.createdAt?.toISOString() ?? null,
       actor: log.actor,
     };

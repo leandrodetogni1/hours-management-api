@@ -18,6 +18,11 @@ const invitationInclude = {
   inviter: { select: { id: true, email: true } },
 } as const;
 
+export interface DeletedInvitationSnapshot {
+  email: string;
+  role: string;
+}
+
 @Injectable()
 export class InvitationsRepository {
   constructor(private prisma: PrismaService) {}
@@ -77,14 +82,15 @@ export class InvitationsRepository {
     }
   }
 
-  async deleteInvitation(id: string): Promise<void> {
+  async deleteInvitation(id: string): Promise<DeletedInvitationSnapshot> {
     const invitation = await this.prisma.invitations.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, email: true, role: { select: { name: true } } },
     });
     if (!invitation) {
       throw new NotFoundException(`Invitation with id ${id} not found`);
     }
     await this.prisma.invitations.delete({ where: { id } });
+    return { email: invitation.email, role: invitation.role.name };
   }
 }
