@@ -54,7 +54,6 @@ import { Audit } from '../audit/audit.decorator.js';
 import type { AuditRequestContext } from '../audit/audit.decorator.js';
 
 const ID_PARAM = { name: 'id', description: 'UUID da atividade' };
-const REVIEWER_ROLES = ['admin', 'reviewer'];
 const APPROVER_ROLES = ['owner', 'admin'];
 const PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'];
 
@@ -383,7 +382,7 @@ export class ActivitiesController {
   })
   @ApiEndpoint({
     summary:
-      'Aprovar uma atividade (a partir de PENDING ou VERIFIED) — owner/admin apenas',
+      'Aprovar uma atividade — owner/admin (a partir de qualquer status, exceto se já estiver APPROVED)',
     description: 'Atividade aprovada',
     type: UpdateActivityResponseDto,
     params: [ID_PARAM],
@@ -393,7 +392,7 @@ export class ActivitiesController {
       {
         status: 400,
         description:
-          'Transição de status inválida (só é permitido aprovar atividades PENDING ou VERIFIED)',
+          'Transição de status inválida (a atividade já está APPROVED)',
       },
     ],
   })
@@ -402,7 +401,7 @@ export class ActivitiesController {
     @Param('id') id: string,
     @Body() body: TransitionActivityDto,
   ): Promise<UpdateActivityResponseDto> {
-    return this.activitiesService.approveActivity(id, user.sub, body.comment);
+    return this.activitiesService.approveActivity(id, user, body.comment);
   }
 
   @Patch(':id/reject')
@@ -413,17 +412,17 @@ export class ActivitiesController {
   })
   @ApiEndpoint({
     summary:
-      'Rejeitar uma atividade (a partir de PENDING ou VERIFIED) — admin/reviewer',
+      'Rejeitar uma atividade — reviewer a partir de PENDING/VERIFIED; owner/admin a partir de qualquer status (exceto se já estiver REJECTED)',
     description: 'Atividade rejeitada',
     type: UpdateActivityResponseDto,
     params: [ID_PARAM],
-    roles: REVIEWER_ROLES,
+    roles: PRIVILEGED_ROLES,
     hasBody: true,
     errors: [
       {
         status: 400,
         description:
-          'Transição de status inválida (só é permitido rejeitar atividades PENDING ou VERIFIED)',
+          'Transição de status inválida (reviewer: apenas a partir de PENDING ou VERIFIED; owner/admin: a atividade não pode já estar REJECTED)',
       },
     ],
   })
@@ -432,7 +431,7 @@ export class ActivitiesController {
     @Param('id') id: string,
     @Body() body: TransitionActivityDto,
   ): Promise<UpdateActivityResponseDto> {
-    return this.activitiesService.rejectActivity(id, user.sub, body.comment);
+    return this.activitiesService.rejectActivity(id, user, body.comment);
   }
 
   @Patch(':id/verify')
@@ -442,17 +441,18 @@ export class ActivitiesController {
     resolveMetadata: activityAuditMetadata,
   })
   @ApiEndpoint({
-    summary: 'Verificar uma atividade (a partir de PENDING) — admin/reviewer',
+    summary:
+      'Verificar uma atividade — reviewer a partir de PENDING; owner/admin a partir de qualquer status (exceto se já estiver VERIFIED)',
     description: 'Atividade verificada',
     type: UpdateActivityResponseDto,
     params: [ID_PARAM],
-    roles: REVIEWER_ROLES,
+    roles: PRIVILEGED_ROLES,
     hasBody: true,
     errors: [
       {
         status: 400,
         description:
-          'Transição de status inválida (só é permitido verificar atividades PENDING)',
+          'Transição de status inválida (reviewer: apenas a partir de PENDING; owner/admin: a atividade não pode já estar VERIFIED)',
       },
     ],
   })
@@ -461,6 +461,6 @@ export class ActivitiesController {
     @Param('id') id: string,
     @Body() body: TransitionActivityDto,
   ): Promise<UpdateActivityResponseDto> {
-    return this.activitiesService.verifyActivity(id, user.sub, body.comment);
+    return this.activitiesService.verifyActivity(id, user, body.comment);
   }
 }

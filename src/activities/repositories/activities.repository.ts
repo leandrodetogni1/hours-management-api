@@ -24,6 +24,7 @@ import {
 import { PaginatedActivitiesResponseDto } from '../dto/PaginatedActivitiesResponseDto';
 import { calculateHoursEquivalent } from '../domain/hours-calculator.js';
 import { calculateActivityProgress } from '../domain/progress-calculator.js';
+import { validateStatusTransition } from '../domain/status-transition.js';
 import { CurriculaRepository } from '../../curricula/repositories/curricula.repository.js';
 import { UploadedActivityFile } from '../activity-file.constants.js';
 
@@ -36,13 +37,6 @@ export interface GetActivitiesOptions {
   sortBy: SortableActivityField;
   sortOrder: SortOrder;
 }
-
-const allowedSourceStatuses: Record<Status, Status[]> = {
-  [Status.PENDING]: [],
-  [Status.VERIFIED]: [Status.PENDING],
-  [Status.APPROVED]: [Status.PENDING, Status.VERIFIED],
-  [Status.REJECTED]: [Status.PENDING, Status.VERIFIED],
-};
 
 const activityInclude = {
   users: {
@@ -227,6 +221,7 @@ export class ActivitiesRepository {
     status: Status,
     actorId: string,
     comment?: string,
+    overrideTransitionRules = false,
   ): Promise<UpdateActivityResponseDto> {
     const activity = await this.prisma.activities.findUnique({
       where: { id },
@@ -238,12 +233,14 @@ export class ActivitiesRepository {
     }
 
     const currentStatus = activity.status ?? Status.PENDING;
-    const allowedSources = allowedSourceStatuses[status];
+    const transition = validateStatusTransition({
+      currentStatus,
+      targetStatus: status,
+      overrideTransitionRules,
+    });
 
-    if (!allowedSources.includes(currentStatus)) {
-      throw new BadRequestException(
-        `Não é possível alterar o status de ${currentStatus} para ${status}`,
-      );
+    if (!transition.allowed) {
+      throw new BadRequestException(transition.reason);
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {

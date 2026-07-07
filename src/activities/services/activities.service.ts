@@ -25,6 +25,7 @@ import { UploadedActivityFile } from '../activity-file.constants.js';
 
 const EVENTS_PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'] as const;
 const EDIT_PRIVILEGED_ROLES = ['owner', 'admin', 'reviewer'] as const;
+const STATUS_OVERRIDE_ROLES = ['owner', 'admin'] as const;
 
 export type DeletedActivityResult = DeleteActivityResponseDto & {
   event: string | null;
@@ -101,40 +102,50 @@ export class ActivitiesService {
 
   approveActivity(
     id: string,
-    actorId: string,
+    currentUser: JwtUserPayload,
     comment?: string,
   ): Promise<UpdateActivityResponseDto> {
     return this.activityRepository.updateActivityStatus(
       id,
       Status.APPROVED,
-      actorId,
+      currentUser.sub,
       comment,
+      this.canOverrideTransitions(currentUser),
     );
   }
 
   rejectActivity(
     id: string,
-    actorId: string,
+    currentUser: JwtUserPayload,
     comment?: string,
   ): Promise<UpdateActivityResponseDto> {
     return this.activityRepository.updateActivityStatus(
       id,
       Status.REJECTED,
-      actorId,
+      currentUser.sub,
       comment,
+      this.canOverrideTransitions(currentUser),
     );
   }
 
   verifyActivity(
     id: string,
-    actorId: string,
+    currentUser: JwtUserPayload,
     comment?: string,
   ): Promise<UpdateActivityResponseDto> {
     return this.activityRepository.updateActivityStatus(
       id,
       Status.VERIFIED,
-      actorId,
+      currentUser.sub,
       comment,
+      this.canOverrideTransitions(currentUser),
+    );
+  }
+
+  private canOverrideTransitions(currentUser: JwtUserPayload): boolean {
+    return (
+      typeof currentUser.role === 'string' &&
+      (STATUS_OVERRIDE_ROLES as readonly string[]).includes(currentUser.role)
     );
   }
 
