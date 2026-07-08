@@ -301,6 +301,7 @@ export class ActivitiesRepository {
     dto: UpdateActivityDto,
     actorId: string,
     file?: UploadedActivityFile,
+    overrideStatusRestriction = false,
   ): Promise<UpdateActivityResponseDto> {
     if (file && dto.removeFile) {
       throw new BadRequestException(
@@ -327,7 +328,7 @@ export class ActivitiesRepository {
     }
 
     const currentStatus = existing.status ?? Status.PENDING;
-    if (currentStatus !== Status.PENDING) {
+    if (!overrideStatusRestriction && currentStatus !== Status.PENDING) {
       throw new BadRequestException(
         `Apenas atividades PENDING podem ser editadas (status atual: ${currentStatus})`,
       );

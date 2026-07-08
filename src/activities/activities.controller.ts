@@ -220,7 +220,7 @@ export class ActivitiesController {
   })
   @ApiEndpoint({
     summary:
-      'Editar uma atividade PENDING — dono da atividade ou owner/admin/reviewer (apenas campos enviados são alterados; hoursEquivalent é recalculado). Aceita multipart/form-data para anexar/substituir o arquivo, ou removeFile=true para removê-lo',
+      'Editar uma atividade — dono da atividade ou reviewer apenas em PENDING; owner/admin em qualquer status, mantendo o status atual (apenas campos enviados são alterados; hoursEquivalent é recalculado). Aceita multipart/form-data para anexar/substituir o arquivo, ou removeFile=true para removê-lo',
     description: 'Atividade atualizada',
     type: UpdateActivityResponseDto,
     params: [ID_PARAM],
@@ -229,7 +229,7 @@ export class ActivitiesController {
       {
         status: 400,
         description:
-          'Atividade não está em PENDING (apenas PENDING pode ser editada), endDate < startDate, ou envio de arquivo combinado com removeFile',
+          'Atividade não está em PENDING (dono/reviewer só podem editar PENDING; owner/admin editam qualquer status), endDate < startDate, ou envio de arquivo combinado com removeFile',
       },
       {
         status: 403,

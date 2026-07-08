@@ -97,6 +97,7 @@ export class ActivitiesService {
       dto,
       currentUser.sub,
       file,
+      this.canOverrideTransitions(currentUser),
     );
   }
 
