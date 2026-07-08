@@ -142,6 +142,13 @@ export class ActivitiesService {
     );
   }
 
+  updateActivityNote(
+    id: string,
+    note?: string | null,
+  ): Promise<UpdateActivityResponseDto> {
+    return this.activityRepository.updateActivityNote(id, note);
+  }
+
   private canOverrideTransitions(currentUser: JwtUserPayload): boolean {
     return (
       typeof currentUser.role === 'string' &&

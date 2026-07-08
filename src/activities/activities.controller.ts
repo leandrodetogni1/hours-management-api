@@ -46,6 +46,7 @@ import { GetActivitiesQueryDto } from './dto/GetActivitiesQueryDto.js';
 import { ActivitiesListQueryDto } from './dto/ActivitiesListQueryDto.js';
 import { PaginatedActivitiesResponseDto } from './dto/PaginatedActivitiesResponseDto.js';
 import { TransitionActivityDto } from './dto/TransitionActivityDto.js';
+import { UpdateActivityNoteDto } from './dto/UpdateActivityNoteDto.js';
 import { ActivityEventResponseDto } from './dto/ActivityEventResponseDto.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { JwtUserPayload } from '../auth/decorators/current-user.decorator.js';
@@ -462,5 +463,33 @@ export class ActivitiesController {
     @Body() body: TransitionActivityDto,
   ): Promise<UpdateActivityResponseDto> {
     return this.activitiesService.verifyActivity(id, user, body.comment);
+  }
+
+  @Patch(':id/note')
+  @Audit({
+    action: 'activity.note_updated',
+    entityType: 'activity',
+    resolveMetadata: activityAuditMetadata,
+  })
+  @ApiEndpoint({
+    summary:
+      'Adicionar, editar ou remover a nota do professor — owner/admin/reviewer (texto vazio ou nulo remove)',
+    description: 'Nota da atividade atualizada',
+    type: UpdateActivityResponseDto,
+    params: [ID_PARAM],
+    roles: PRIVILEGED_ROLES,
+    hasBody: true,
+    errors: [
+      {
+        status: 400,
+        description: 'Nota inválida (texto de até 1000 caracteres)',
+      },
+    ],
+  })
+  updateActivityNote(
+    @Param('id') id: string,
+    @Body() body: UpdateActivityNoteDto,
+  ): Promise<UpdateActivityResponseDto> {
+    return this.activitiesService.updateActivityNote(id, body.note);
   }
 }

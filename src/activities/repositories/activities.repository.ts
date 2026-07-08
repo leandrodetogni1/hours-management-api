@@ -269,6 +269,33 @@ export class ActivitiesRepository {
     };
   }
 
+  async updateActivityNote(
+    id: string,
+    note?: string | null,
+  ): Promise<UpdateActivityResponseDto> {
+    const existing = await this.prisma.activities.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`Activity with id ${id} not found`);
+    }
+
+    const value = note?.trim() || null;
+
+    const updated = await this.prisma.activities.update({
+      where: { id },
+      data: { note: value, noteUpdatedAt: value ? new Date() : null },
+      include: activityInclude,
+    });
+
+    return {
+      message: 'Activity note updated successfully',
+      activity: ActivityMapper.toResponseDto(updated),
+    };
+  }
+
   async updateActivity(
     id: string,
     dto: UpdateActivityDto,

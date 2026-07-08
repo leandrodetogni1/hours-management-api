@@ -76,6 +76,8 @@ model activities {
   certificateUrl  String?          @map("certificateurl") @db.VarChar(500)
   startDate       DateTime?        @map("startdate") @db.Date
   endDate         DateTime?        @map("enddate") @db.Date
+  note            String?          @db.VarChar(1000)
+  noteUpdatedAt   DateTime?        @map("noteupdatedat") @db.Timestamp(6)
   createdAt      DateTime?         @map("createdat") @default(now()) @db.Timestamp(6)
   updatedAt      DateTime?         @map("updatedat") @default(now()) @db.Timestamp(6)
   users          users?            @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)

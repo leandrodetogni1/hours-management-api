@@ -82,6 +82,15 @@ export class ActivityResponseDto {
   @ApiPropertyOptional({ example: '2025-03-15' })
   endDate: string | null;
 
+  @ApiPropertyOptional({
+    example: 'Certificado está errado, verifique',
+    description: 'Nota do professor para o aluno',
+  })
+  note: string | null;
+
+  @ApiPropertyOptional({ example: '2025-03-01T00:00:00.000Z' })
+  noteUpdatedAt: string | null;
+
   @ApiPropertyOptional({ example: '2025-03-01T00:00:00.000Z' })
   createdAt: string | null;
 

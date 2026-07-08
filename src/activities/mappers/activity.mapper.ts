@@ -14,6 +14,8 @@ export class ActivityMapper {
     certificateUrl: string | null;
     startDate: Date | null;
     endDate: Date | null;
+    note: string | null;
+    noteUpdatedAt: Date | null;
     createdAt: Date | null;
     updatedAt: Date | null;
     users: {
@@ -50,6 +52,8 @@ export class ActivityMapper {
       certificateUrl: activity.certificateUrl,
       startDate: activity.startDate?.toISOString() ?? null,
       endDate: activity.endDate?.toISOString() ?? null,
+      note: activity.note,
+      noteUpdatedAt: activity.noteUpdatedAt?.toISOString() ?? null,
       createdAt: activity.createdAt?.toISOString() ?? null,
       updatedAt: activity.updatedAt?.toISOString() ?? null,
       users: activity.users,
